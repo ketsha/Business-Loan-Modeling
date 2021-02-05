@@ -10,7 +10,8 @@
   
   Loans guaranteed by the SBA range from small to large and can be used for most business purposes, including long-term fixed assets and operating capital. Some loan programs set   restrictions on how you can use the funds, so check with an SBA-approved lender when requesting a loan. Your lender can match you with the right loan for your business needs.
 
-# What you need to know for SBA Loan
+# What you need to know about SBA Loan
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/What%20you%20need%20to%20know%20about%20Loan.png?raw=true)
 
 
 # Eligibility requirements

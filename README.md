@@ -17,3 +17,4 @@
       The business cannot get funds from any other financial lender.
 
 # Loans for exporters
+  Most U.S. banks view loans for exporters as risky. This can make it harder for you to get loans for things like day-to-day operations, advance orders with suppliers, and debt     refinancing. That’s why the SBA created programs to make it easier for U.S. small businesses to get export loans.

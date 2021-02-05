@@ -57,4 +57,7 @@
             SBA_Appv			        SBA’s guaranteed amount of approved loan
 
 # Technical Stack
-  The Business Loan Modeling project will use Azure Synapse, Azure Machine Learning, Azure DataLake Gen 2 and PowerBI
+  The Business Loan Modeling project will use Azure Synapse, Azure Machine Learning, Azure DataLake Gen 2 and PowerBI.
+  
+# Architecture Overview
+

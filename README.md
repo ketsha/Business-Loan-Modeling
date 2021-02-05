@@ -24,7 +24,7 @@
       The business owner has invested their own time or money into the business.
     # Exhaust financing options
       The business cannot get funds from any other financial lender.
-# Business Loan Factors
+
 ![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/business-loan-factors-1.jpg?raw=true)
 # Business Loans for exporters
   Most U.S. banks view loans for exporters as risky. This can make it harder for you to get loans for things like day-to-day operations, advance orders with suppliers, and debt     refinancing. That’s why the SBA created programs to make it easier for U.S. small businesses to get export loans.

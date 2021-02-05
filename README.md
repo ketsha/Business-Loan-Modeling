@@ -12,7 +12,7 @@
 
 # What you need to know about SBA Loan
 ![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/What%20you%20need%20to%20know%20about%20Loan.png?raw=true)
-# Eligibility requirements
+# Business Loan Eligibility requirements
   Lenders and loan programs have unique eligibility requirements. In general, eligibility is based on what a business does to receive its income, the character of its ownership,     and where the business operates. Normally, businesses must meet size standards, be able to repay, and have a sound business purpose. Even those with bad credit may qualify for     startup funding. The lender will provide you with a full list of eligibility requirements for your loan.
 
     Following are the baseline eligibility requirements:

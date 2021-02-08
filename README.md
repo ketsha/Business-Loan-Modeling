@@ -65,4 +65,4 @@
   The Business Loan Modeling project will use Azure Synapse, Azure Machine Learning, Azure DataLake Gen 2 and PowerBI.
   
 # Architecture Overview
-
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/highlevelreferencearchitecture.jpg?raw=true)

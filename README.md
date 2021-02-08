@@ -68,3 +68,66 @@
 ![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/HighLevelReferenceArchitecture.JPG?raw=true)
 ![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/SynapsePipeComponents.JPG?raw=true)
 ![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/EndToEndDI_Analytics_Components.JPG?raw=true)
+
+# Implementation Detail
+Goal is to train ML model on the SBA loan data and then build a Data engineering pipeline which can further process one or many new loan requests coming in as either API and/or Batch requests. Azure Synapse Pipe from Azure Synapse Workspace is used for consuming data from third party (same can be achieved by leveraging Azure Data Factory). Azure Synapse pipeline was used for multiple purpose:
+1. Data Ingestion (Third Party API to ADLS Gen2)
+2. Orchestration
+
+Azure Machine Learning service was used for building and training Machine Learning (ML) model. Once a model was built, then Azure Synapse Pipeline was levaraged for orchestrating it call Azure ML Batch pipeline to score on a new SBI loan data requests.
+
+Stages to accomplish goal:
+Stage 1: Build a ML model
+To build an ML model, we need to first cleanse the public data to a conformed state which we can feed to train a machine learning model.
+1)	Ingesting the SBA data from a Source (Typically this would be a partner or data provider who provides a storage account\FTP site to access this data), Copy Data activity in the below Synapse pipeline will be able to copy the data from a remote partner to a local storage account. For this demo we are copying binary files from “sbasourcerawdata” to “sba” containers
+
+2)	Once we get the data(CSV file) in our scenario, We need to cleanse this data to shape it into a structure which is good enough to train a Machine learning model. For that purpose, we are using a Dataflow activity within Synapse pipelines, where we can shape and structure the original raw data. Dataflow uses Synapse Spark clusters in the background to execute these transformations and your training data even if it is in TB’s can be quickly processed and cleansed. For this demo, the source of the Dataflows would be “sba” container and the sink of the dataflow would land it in “sbacurated” container.
+
+
+ 
+
+
+
+Dataflow activity looks like the below structure where we define datatypes and formats, Clean unnecessary characters like “$” values, Remove unnecessary columns etc which is not needed to train the model etc. Finally, the output will be written a Dataset which is cleansed and ready to be fed into Azure Machine learning for training a model.
+
+ 
+
+3)	Build an Azure ML training pipeline, there are multiple ways to achieve this like using Python notebooks, Designer and Auto ML, but the easiest would be to use the Azure ML designer where you get a canvas to drag and drop tasks to build a training pipeline.
+
+We build the following pipeline to train a model using this training data which we have cleansed in the previous step. We add the “sbacurated” container in the previous stage as a dataset for Azure ML workspace. This dataset can now be used in various experiments.
+ 
+The curated data which we processed in the previous steps using Dataflows is registered as a Dataset in Azure ML. That dataset which is shown as “sbacurated” acts as the training data, It goes through few steps like Splitting the data, filtering unnecessary columns etc and finally Train a model. We are using Boosted decision Tree regression algorithm here but you can try different regression algorithms to compare the accuracy etc.
+Once you are satisfied with the Model metrics like Accuracy, Spearman correlation etc, the last step of the model is to Export out the Scored data to a CSV file, This file is getting saved in the “amloutput” on the storage container and finally publishing this as a Batch pipeline.
+Here is a Batch Pipeline which is shown after getting published. This is the Batch Inference pipeline which comes with an endpoint. This will be executed as part of the Synapse Pipeline for doing batch scoring on new SBA loan requests as part of a nightly schedule as explained in next stage.
+ 
+
+
+
+
+
+
+
+
+
+
+
+Stage 2: Build a Synapse Pipeline to do daily Batch Inferencing on new SBA loan requests 
+As the ML model\Batch inference pipeline is already built in the previous step, now we need to execute a Synapse Pipeline on a daily schedule, which will retrieve all the new data, cleanse it to make sure that there are no data consistency issues and finally call the Azure ML pipeline which we have built in the earlier stage. Step 1 and 2 in this stage are the same as the earlier stage and hence not repeating them for brevity purposes. You can reuse the same pipeline which you built earlier to add the last activity to execute a Machine learning pipeline as shown below.
+ 
+
+The last step of the Syanpse pipeline, calls an Azure ML pipeline which we have built in the earlier stage. This step will trigger the Batch inference pipeline in Azure ML.
+From an Azure ML side, the Batch Inference run would look something like the below image which confirms that all the stage completed. successfully
+ 
+
+The last step of the process would export the data out to “amloutput” storage account which contains the final CSV which is scored by the Azure ML batch inference pipeline.
+Here is a screenshot of all the containers in the storage account.  Final CSV file gets stored in the amloutput container.
+ 
+Best part of Synapse is the new Synapse Serverless SQL which has an option to query this data natively from within the filesystem.
+ 
+Finally, you can run a query to see all the scored amounts for different SBA requests.
+
+ 
+
+You can create a view on top of this query and any client which can talk to SQL can run this query to view all the Scored data as a simple SELECT query.
+
+During Stage 1, we could have also deployed a Real time Inference pipeline which would deploy the API to an existing Kubernetes clusters. Any application can pass parameters to this API with different values and in turn get a response with the Scored label value. This is ideal for interactive applications when a decision needs to be taken immediately. 

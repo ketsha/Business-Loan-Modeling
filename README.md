@@ -66,3 +66,5 @@
   
 # Architecture Overview
 ![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/HighLevelReferenceArchitecture.JPG?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/SynapsePipeComponents.JPG?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/EndToEndDI_Analytics_Components.JPG?raw=true)

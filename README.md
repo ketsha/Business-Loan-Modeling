@@ -66,4 +66,3 @@
   
 # Architecture Overview
 ![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/HighLevelReferenceArchitecture.JPG?raw=true)
-<img src="https://github.com/ketsha/Business-Loan-Modeling/blob/main/HighLevelReferenceArchitecture.JPG" width="300" />

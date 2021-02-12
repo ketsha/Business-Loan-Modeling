@@ -1,0 +1,45 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"value": "srgosynapseunnmgd"
+		},
+		"AzureML_LS_servicePrincipalKey": {
+			"value": ""
+		},
+		"LS_Blobstorage_connectionString": {
+			"value": ""
+		},
+		"LS_Cosmos_Synlink_connectionString": {
+			"value": ""
+		},
+		"LS_SBASourceRawdata_connectionString": {
+			"value": ""
+		},
+		"srgostorgen2hier_accountKey": {
+			"value": ""
+		},
+		"srgosynapseunnmgd-WorkspaceDefaultSqlServer_connectionString": {
+			"value": ""
+		},
+		"AzureML_LS_properties_typeProperties_subscriptionId": {
+			"value": "6f931dc1-9715-4a59-a849-0c049740fa0f"
+		},
+		"AzureML_LS_properties_typeProperties_resourceGroupName": {
+			"value": "Chubb"
+		},
+		"AzureML_LS_properties_typeProperties_servicePrincipalId": {
+			"value": "089e75c8-46e0-4605-a057-e4228cab8de6"
+		},
+		"AzureML_LS_properties_typeProperties_tenant": {
+			"value": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+		},
+		"srgostorgen2hier_properties_typeProperties_url": {
+			"value": "https://srgostorgen2hier.dfs.core.windows.net"
+		},
+		"srgosynapseunnmgd-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://srgostorgen2hier.dfs.core.windows.net"
+		}
+	}
+}

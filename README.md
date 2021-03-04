@@ -130,4 +130,4 @@ During Stage 1, we could have also deployed a Real time Inference pipeline which
 
 # Deployment
 
-[![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fketsha%2FBusiness-Loan-Modeling%2Fworkspace_publish%2Fsrgosynapseunnmgd%2FTemplateForWorkspace.json%3Ftoken%3DAFLWF3PG5DEMQIORGPCP3ALAIFFVS)
+[![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fketsha%2FBusiness-Loan-Modeling%2Fworkspace_publish%2Fsrgosynapseunnmgd%2FTemplateForWorkspace.json%3Ftoken%3DAFLWF3JU2CKPZJMCU3FIHB3AIFGRK)

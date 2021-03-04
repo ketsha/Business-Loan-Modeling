@@ -128,4 +128,4 @@ You can create a view on top of this query and any client which can talk to SQL 
 
 During Stage 1, we could have also deployed a Real time Inference pipeline which would deploy the API to an existing Kubernetes clusters. Any application can pass parameters to this API with different values and in turn get a response with the Scored label value. This is ideal for interactive applications when a decision needs to be taken immediately. 
 # Deployment
-[![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https://github.com/ketsha/Business-Loan-Modeling/blob/workspace_publish/srgosynapseunnmgd/TemplateForWorkspace.json)
+[![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://raw.githubusercontent.com/ketsha/Business-Loan-Modeling/workspace_publish/srgosynapseunnmgd/TemplateForWorkspace.json)

@@ -127,5 +127,7 @@ Finally, you can run a query to see all the scored amounts for different SBA req
 You can create a view on top of this query and any client which can talk to SQL can run this query to view all the Scored data as a simple SELECT query.
 
 During Stage 1, we could have also deployed a Real time Inference pipeline which would deploy the API to an existing Kubernetes clusters. Any application can pass parameters to this API with different values and in turn get a response with the Scored label value. This is ideal for interactive applications when a decision needs to be taken immediately. 
+
 # Deployment
+
 [![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fketsha%2FBusiness-Loan-Modeling%2Fworkspace_publish%2Fsrgosynapseunnmgd%2FTemplateForWorkspace.json%3Ftoken%3DAFLWF3ONV5YSDIXP6SGIL4LAIE4C4)

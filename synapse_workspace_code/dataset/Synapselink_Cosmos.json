@@ -1,0 +1,16 @@
+{
+	"name": "Synapselink_Cosmos",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "LS_Cosmos_Synlink",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "CosmosDbSqlApiCollection",
+		"schema": {},
+		"typeProperties": {
+			"collectionName": "synliinkdemo"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

@@ -11,9 +11,6 @@
 		"LS_Blobstorage_connectionString": {
 			"value": ""
 		},
-		"LS_Cosmos_Synlink_connectionString": {
-			"value": ""
-		},
 		"LS_SBASourceRawdata_connectionString": {
 			"value": ""
 		},

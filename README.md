@@ -11,7 +11,7 @@
   Loans guaranteed by the SBA range from small to large and can be used for most business purposes, including long-term fixed assets and operating capital. Some loan programs set   restrictions on how you can use the funds, so check with an SBA-approved lender when requesting a loan. Your lender can match you with the right loan for your business needs.
 
 # What you need to know about SBA Loan
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/What%20you%20need%20to%20know%20about%20Loan.png?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/What%20you%20need%20to%20know%20about%20Loan.png?raw=true)
 # Business Loan Eligibility requirements
   Lenders and loan programs have unique eligibility requirements. In general, eligibility is based on what a business does to receive its income, the character of its ownership,     and where the business operates. Normally, businesses must meet size standards, be able to repay, and have a sound business purpose. Even those with bad credit may qualify for     startup funding. The lender will provide you with a full list of eligibility requirements for your loan.
 
@@ -25,7 +25,7 @@
     # Exhaust financing options
       The business cannot get funds from any other financial lender.
 
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/business-loan-factors-1.jpg?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/business-loan-factors-1.jpg?raw=true)
 # Business Loans for exporters
   Most U.S. banks view loans for exporters as risky. This can make it harder for you to get loans for things like day-to-day operations, advance orders with suppliers, and debt     refinancing. That’s why the SBA created programs to make it easier for U.S. small businesses to get export loans.
 
@@ -65,9 +65,9 @@
   The Business Loan Modeling project will use Azure Synapse Analytics, Azure DataLake Gen2, Azure Machine Learning and PowerBI.
   
 # Architecture Overview
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/HighLevelReferenceArchitecture.JPG?raw=true)
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/SynapsePipeComponents.JPG?raw=true)
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/EndToEndDI_Analytics_Components.JPG?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/HighLevelReferenceArchitecture.JPG?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/SynapsePipeComponents.JPG?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/EndToEndDI_Analytics_Components.JPG?raw=true)
 
 # Implementation Detail
 Goal is to train ML model on the SBA loan data and then build a Data engineering pipeline which can further process one or many new loan requests coming in as either API and/or Batch requests. Azure Synapse Pipe from Azure Synapse Workspace is used for consuming data from third party (same can be achieved by leveraging Azure Data Factory). Azure Synapse pipeline was used for multiple purpose:
@@ -83,46 +83,46 @@ To build an ML model, we need to first cleanse the public data to a conformed st
 
 2)	Once we get the data(CSV file) in our scenario, We need to cleanse this data to shape it into a structure which is good enough to train a Machine learning model. For that purpose, we are using a Dataflow activity within Synapse pipelines, where we can shape and structure the original raw data. Dataflow uses Synapse Spark clusters in the background to execute these transformations and your training data even if it is in TB’s can be quickly processed and cleansed. For this demo, the source of the Dataflows would be “sba” container and the sink of the dataflow would land it in “sbacurated” container.
 
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/Step1-Dataload.png?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/Step1-Dataload.png?raw=true)
 
 Dataflow activity looks like the below structure where we define datatypes and formats, Clean unnecessary characters like “$” values, Remove unnecessary columns etc which is not needed to train the model etc. Finally, the output will be written a Dataset which is cleansed and ready to be fed into Azure Machine learning for training a model.
 
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/Step2-Datacuration.png?raw=true) 
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/Step2-Datacuration.png?raw=true) 
 
 3)	Build an Azure ML training pipeline, there are multiple ways to achieve this like using Python notebooks, Designer and Auto ML, but the easiest would be to use the Azure ML designer where you get a canvas to drag and drop tasks to build a training pipeline.
 
 We build the following pipeline to train a model using this training data which we have cleansed in the previous step. We add the “sbacurated” container in the previous stage as a dataset for Azure ML workspace. This dataset can now be used in various experiments.
 
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/Step3-AzureML.png?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/Step3-AzureML.png?raw=true)
 
 The curated data which we processed in the previous steps using Dataflows is registered as a Dataset in Azure ML. That dataset which is shown as “sbacurated” acts as the training data, It goes through few steps like Splitting the data, filtering unnecessary columns etc and finally Train a model. We are using Boosted decision Tree regression algorithm here but you can try different regression algorithms to compare the accuracy etc.
 Once you are satisfied with the Model metrics like Accuracy, Spearman correlation etc, the last step of the model is to Export out the Scored data to a CSV file, This file is getting saved in the “amloutput” on the storage container and finally publishing this as a Batch pipeline.
 Here is a Batch Pipeline which is shown after getting published. This is the Batch Inference pipeline which comes with an endpoint. This will be executed as part of the Synapse Pipeline for doing batch scoring on new SBA loan requests as part of a nightly schedule as explained in next stage.
  
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/Step4-AzureML.png?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/Step4-AzureML.png?raw=true)
 
 Stage 2: Build a Synapse Pipeline to do daily Batch Inferencing on new SBA loan requests 
 As the ML model\Batch inference pipeline is already built in the previous step, now we need to execute a Synapse Pipeline on a daily schedule, which will retrieve all the new data, cleanse it to make sure that there are no data consistency issues and finally call the Azure ML pipeline which we have built in the earlier stage. Step 1 and 2 in this stage are the same as the earlier stage and hence not repeating them for brevity purposes. You can reuse the same pipeline which you built earlier to add the last activity to execute a Machine learning pipeline as shown below.
 
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/Step5-AzureSynapsePipeline.png?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/Step5-AzureSynapsePipeline.png?raw=true)
 
 The last step of the Syanpse pipeline, calls an Azure ML pipeline which we have built in the earlier stage. This step will trigger the Batch inference pipeline in Azure ML.
 From an Azure ML side, the Batch Inference run would look something like the below image which confirms that all the stage completed. successfully
 
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/Step6-AzureML.png?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/Step6-AzureML.png?raw=true)
 
 The last step of the process would export the data out to “amloutput” storage account which contains the final CSV which is scored by the Azure ML batch inference pipeline.
 Here is a screenshot of all the containers in the storage account.  Final CSV file gets stored in the amloutput container.
 
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/Step7-AzureML.png?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/Step7-AzureML.png?raw=true)
 
 Best part of Azure Synapse is the new Synapse Serverless SQL which has an option to query this data natively from within the filesystem.
 
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/Step8-AzureML.png?raw=true)
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/Step8-AzureML.png?raw=true)
 
 Finally, you can run a query to see all the scored amounts for different SBA requests.
 
-![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/Step9-AzureSynapseanalytics.png?raw=true) 
+![name-of-you-image](https://github.com/ketsha/Business-Loan-Modeling/blob/main/images/Step9-AzureSynapseanalytics.png?raw=true) 
 
 You can create a view on top of this query and any client which can talk to SQL can run this query to view all the Scored data as a simple SELECT query.
 

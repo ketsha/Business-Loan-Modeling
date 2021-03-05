@@ -10,7 +10,7 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobFSLocation",
-				"fileName": "SBAnational3.csv",
+				"fileName": "SBAnational2.csv",
 				"fileSystem": "sba"
 			},
 			"columnDelimiter": ",",

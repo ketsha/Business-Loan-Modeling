@@ -79,7 +79,7 @@
 				]
 			},
 			{
-				"name": "Machine Learning Execute Pipeline1",
+				"name": "Call Azure ML pipelines",
 				"type": "AzureMLExecutePipeline",
 				"dependsOn": [
 					{

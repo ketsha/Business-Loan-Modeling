@@ -97,6 +97,13 @@
 					"secureInput": false
 				},
 				"userProperties": [],
+				"typeProperties": {
+					"experimentName": "experimentName",
+					"mlPipelineParameters": {
+						"mlParameterName": "mlParameterValue"
+					},
+					"mlPipelineId": "2805da30-d811-4009-bfef-2fcdc2bff449"
+				},
 				"linkedServiceName": {
 					"referenceName": "AzureML_LS",
 					"type": "LinkedServiceReference"

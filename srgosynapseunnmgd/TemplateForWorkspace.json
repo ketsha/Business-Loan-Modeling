@@ -192,6 +192,7 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/dataflows/Clean Loan Raw data')]",
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
 				"[concat(variables('workspaceId'), '/datasets/DS_Binarysourcerawdata')]",
 				"[concat(variables('workspaceId'), '/datasets/DS_BinaryRaw')]",
 				"[concat(variables('workspaceId'), '/linkedServices/AzureML_LS')]"
@@ -500,7 +501,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobFSLocation",
-						"fileName": "SBAnational3.csv",
+						"fileName": "SBAnational2.csv",
 						"fileSystem": "sba"
 					},
 					"columnDelimiter": ",",
@@ -958,6 +959,25 @@
 			"properties": {
 				"content": {
 					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 GrAppv as Requested_amount , [Scored Labels] as Predicted_Amount\nFROM\n    OPENROWSET(\n        BULK 'https://srgostorgen2hier.dfs.core.windows.net/amloutput/amlscoreddata.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION='2.0',\nHEADER_ROW = TRUE\n    ) AS [result]\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "Built-in",
+						"databaseName": "master"
+					}
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 3')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-- This is auto-generated code\nSELECT\n    TOP 100 *\nFROM\n    OPENROWSET(\n        BULK 'https://srgostorgen2hier.dfs.core.windows.net/sbacurated/part-00000-5f4215a4-ce1c-4407-9cc3-15dac1991e3f-c000.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION='2.0'\n    ) AS [result]\n",
 					"metadata": {
 						"language": "sql"
 					},

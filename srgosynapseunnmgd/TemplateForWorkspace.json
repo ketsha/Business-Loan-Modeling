@@ -109,33 +109,6 @@
 						}
 					},
 					{
-						"name": "Exec Azure ML Pipeline",
-						"type": "AzureMLExecutePipeline",
-						"dependsOn": [
-							{
-								"activity": "Clean Loan Raw data",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"mlPipelineEndpointId": "0018dd95-fd22-4048-950c-53095b635f36"
-						},
-						"linkedServiceName": {
-							"referenceName": "AzureML_LS",
-							"type": "LinkedServiceReference"
-						}
-					},
-					{
 						"name": "Ingest SBA data",
 						"type": "Copy",
 						"dependsOn": [],
@@ -181,6 +154,37 @@
 								"parameters": {}
 							}
 						]
+					},
+					{
+						"name": "Machine Learning Execute Pipeline1",
+						"type": "AzureMLExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Clean Loan Raw data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"experimentName": "experimentName",
+							"mlPipelineParameters": {
+								"mlParameterName": "mlParameterValue"
+							},
+							"mlPipelineId": "2805da30-d811-4009-bfef-2fcdc2bff449"
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureML_LS",
+							"type": "LinkedServiceReference"
+						}
 					}
 				],
 				"annotations": [],
@@ -188,10 +192,9 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/dataflows/Clean Loan Raw data')]",
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
-				"[concat(variables('workspaceId'), '/linkedServices/AzureML_LS')]",
 				"[concat(variables('workspaceId'), '/datasets/DS_Binarysourcerawdata')]",
-				"[concat(variables('workspaceId'), '/datasets/DS_BinaryRaw')]"
+				"[concat(variables('workspaceId'), '/datasets/DS_BinaryRaw')]",
+				"[concat(variables('workspaceId'), '/linkedServices/AzureML_LS')]"
 			]
 		},
 		{

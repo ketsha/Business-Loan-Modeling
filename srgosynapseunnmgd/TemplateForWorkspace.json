@@ -57,15 +57,6 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('workspaceName'), '/srgosqlpoolsyn')]",
-			"type": "Microsoft.Synapse/workspaces/sqlPools",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"annotations": []
-			},
-			"dependsOn": []
-		},
-		{
 			"name": "[concat(parameters('workspaceName'), '/Clean Raw data')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -156,7 +147,7 @@
 						]
 					},
 					{
-						"name": "Machine Learning Execute Pipeline1",
+						"name": "Call Azure ML pipelines",
 						"type": "AzureMLExecutePipeline",
 						"dependsOn": [
 							{
@@ -192,7 +183,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/dataflows/Clean Loan Raw data')]",
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
 				"[concat(variables('workspaceId'), '/datasets/DS_Binarysourcerawdata')]",
 				"[concat(variables('workspaceId'), '/datasets/DS_BinaryRaw')]",
 				"[concat(variables('workspaceId'), '/linkedServices/AzureML_LS')]"
@@ -915,7 +905,7 @@
 							"name": "RemoveUnnecessaryColumns"
 						}
 					],
-					"script": "source(output(\n\t\tLoanNr_ChkDgt as integer '000',\n\t\tName as string,\n\t\tCity as string,\n\t\tState as string,\n\t\tZip as integer '000',\n\t\tBank as string,\n\t\tBankState as string,\n\t\tNAICS as integer,\n\t\tApprovalDate as string,\n\t\tApprovalFY as short,\n\t\tTerm as short,\n\t\tNoEmp as short,\n\t\tNewExist as short,\n\t\tCreateJob as short,\n\t\tRetainedJob as short,\n\t\tFranchiseCode as integer,\n\t\tUrbanRural as short,\n\t\tRevLineCr as boolean,\n\t\tLowDoc as boolean,\n\t\tChgOffDate as string,\n\t\tDisbursementDate as string,\n\t\tDisbursementGross as integer '$###,###',\n\t\tBalanceGross as integer '$###,###',\n\t\tMIS_Status as string,\n\t\tChgOffPrinGr as integer '$###,###',\n\t\tGrAppv as integer '$###,###',\n\t\tSBA_Appv as integer '$###,###'\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> PullSourceData\nPullSourceData derive(ApprovalDate = toDate(ApprovalDate,'dd-MM-yy'),\n\t\tChgOffDate = toDate(ChgOffDate,'dd-MM-yy'),\n\t\tDisbursementDate = toDate(DisbursementDate,'dd-MM-yy')) ~> DerivedColumn1\nDerivedColumn1 select(mapColumn(\n\t\tLoanNr_ChkDgt,\n\t\tName,\n\t\tCity,\n\t\tState,\n\t\tZip,\n\t\tBank,\n\t\tBankState,\n\t\tNAICS,\n\t\tApprovalFY,\n\t\tTerm,\n\t\tNoEmp,\n\t\tNewExist,\n\t\tCreateJob,\n\t\tRetainedJob,\n\t\tFranchiseCode,\n\t\tUrbanRural,\n\t\tRevLineCr,\n\t\tLowDoc,\n\t\tDisbursementGross,\n\t\tBalanceGross,\n\t\tMIS_Status,\n\t\tChgOffPrinGr,\n\t\tGrAppv,\n\t\tSBA_Appv\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveUnnecessaryColumns\nRemoveUnnecessaryColumns sink(input(\n\t\tColumn_1 as string,\n\t\tColumn_2 as string,\n\t\tColumn_3 as string,\n\t\tColumn_4 as string,\n\t\tColumn_5 as string,\n\t\tColumn_6 as string,\n\t\tColumn_7 as string,\n\t\tColumn_8 as string,\n\t\tColumn_9 as string,\n\t\tColumn_10 as string,\n\t\tColumn_11 as string,\n\t\tColumn_12 as string,\n\t\tColumn_13 as string,\n\t\tColumn_14 as string,\n\t\tColumn_15 as string,\n\t\tColumn_16 as string,\n\t\tColumn_17 as string,\n\t\tColumn_18 as string,\n\t\tColumn_19 as string,\n\t\tColumn_20 as string,\n\t\tColumn_21 as string,\n\t\tColumn_22 as string,\n\t\tColumn_23 as string,\n\t\tColumn_24 as string,\n\t\tColumn_25 as string,\n\t\tColumn_26 as string,\n\t\tColumn_27 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\ttruncate: true,\n\tpartitionBy('hash', 1),\n\tsaveOrder: 1) ~> Curateddata"
+					"script": "source(output(\n\t\tLoanNr_ChkDgt as integer '000',\n\t\tName as string,\n\t\tCity as string,\n\t\tState as string,\n\t\tZip as integer '000',\n\t\tBank as string,\n\t\tBankState as string,\n\t\tNAICS as integer,\n\t\tApprovalDate as string,\n\t\tApprovalFY as short,\n\t\tTerm as short,\n\t\tNoEmp as short,\n\t\tNewExist as short,\n\t\tCreateJob as short,\n\t\tRetainedJob as short,\n\t\tFranchiseCode as integer,\n\t\tUrbanRural as short,\n\t\tRevLineCr as boolean,\n\t\tLowDoc as boolean,\n\t\tChgOffDate as string,\n\t\tDisbursementDate as string,\n\t\tDisbursementGross as integer '$###,###',\n\t\tBalanceGross as integer '$###,###',\n\t\tMIS_Status as string,\n\t\tChgOffPrinGr as integer '$###,###',\n\t\tGrAppv as integer '$###,###',\n\t\tSBA_Appv as integer '$###,###'\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> PullSourceData\nPullSourceData derive(LoanNr_ChkDgt = toInteger(LoanNr_ChkDgt),\n\t\tZip = toInteger(Zip),\n\t\tNAICS = toInteger(NAICS),\n\t\tTerm = toInteger(Term),\n\t\tNoEmp = toInteger(NoEmp),\n\t\tCreateJob = toInteger(CreateJob),\n\t\tRetainedJob = toInteger(RetainedJob),\n\t\tFranchiseCode = toInteger(FranchiseCode),\n\t\tUrbanRural = toInteger(UrbanRural),\n\t\tNewExist = toFloat(NewExist)) ~> DerivedColumn1\nDerivedColumn1 select(mapColumn(\n\t\tLoanNr_ChkDgt,\n\t\tName = Zip,\n\t\tCity,\n\t\tState,\n\t\tZip,\n\t\tBank,\n\t\tBankState,\n\t\tNAICS,\n\t\tApprovalFY,\n\t\tTerm,\n\t\tNoEmp,\n\t\tNewExist,\n\t\tCreateJob,\n\t\tRetainedJob,\n\t\tFranchiseCode,\n\t\tUrbanRural,\n\t\tRevLineCr,\n\t\tLowDoc,\n\t\tDisbursementGross,\n\t\tBalanceGross,\n\t\tMIS_Status,\n\t\tChgOffPrinGr,\n\t\tGrAppv,\n\t\tSBA_Appv\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveUnnecessaryColumns\nRemoveUnnecessaryColumns sink(input(\n\t\tColumn_1 as string,\n\t\tColumn_2 as string,\n\t\tColumn_3 as string,\n\t\tColumn_4 as string,\n\t\tColumn_5 as string,\n\t\tColumn_6 as string,\n\t\tColumn_7 as string,\n\t\tColumn_8 as string,\n\t\tColumn_9 as string,\n\t\tColumn_10 as string,\n\t\tColumn_11 as string,\n\t\tColumn_12 as string,\n\t\tColumn_13 as string,\n\t\tColumn_14 as string,\n\t\tColumn_15 as string,\n\t\tColumn_16 as string,\n\t\tColumn_17 as string,\n\t\tColumn_18 as string,\n\t\tColumn_19 as string,\n\t\tColumn_20 as string,\n\t\tColumn_21 as string,\n\t\tColumn_22 as string,\n\t\tColumn_23 as string,\n\t\tColumn_24 as string,\n\t\tColumn_25 as string,\n\t\tColumn_26 as string,\n\t\tColumn_27 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\ttruncate: true,\n\tpartitionBy('hash', 1),\n\tsaveOrder: 1) ~> Curateddata"
 				}
 			},
 			"dependsOn": [
@@ -987,6 +977,409 @@
 					}
 				},
 				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/srgosqlpoolsyn')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"restorePointInTime": "0001-01-01T00:00:00",
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "eastus2"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Notebook 1')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "test123",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1",
+						"state": {
+							"86820322-89e2-475e-9241-c99179d7db9c": {
+								"type": "Synapse.DataFrame",
+								"sync_state": {
+									"table": {
+										"rows": [
+											{
+												"_c11": "1",
+												"_c18": "25000",
+												"_c21": "19093",
+												"_c13": "0",
+												"_c3": "OH",
+												"_c5": "THE HUNTINGTON NATIONAL BANK",
+												"_c10": "0",
+												"_c0": "1839565006",
+												"_c4": "43065",
+												"_c9": "14",
+												"_c22": "25000",
+												"_c14": "0",
+												"_c8": "2006",
+												"_c17": "false",
+												"_c20": "CHGOFF",
+												"_c1": "Dana Wilking dba Top-Cote",
+												"_c16": "false",
+												"_c7": "238110",
+												"_c15": "2",
+												"_c2": "Powell",
+												"_c12": "0",
+												"_c19": "0",
+												"_c6": "OH",
+												"_c23": "12500"
+											},
+											{
+												"_c11": "1",
+												"_c18": "118500",
+												"_c21": "49000",
+												"_c13": "3",
+												"_c3": "FL",
+												"_c5": "BANK OF AMERICA NATL ASSOC",
+												"_c10": "3",
+												"_c0": "1839575009",
+												"_c4": "33319",
+												"_c9": "44",
+												"_c22": "50000",
+												"_c14": "0",
+												"_c8": "2006",
+												"_c17": "false",
+												"_c20": "CHGOFF",
+												"_c1": "Kaza Baba, Inc.",
+												"_c16": "false",
+												"_c7": "447110",
+												"_c15": "1",
+												"_c2": "FORT LAUDERDALE",
+												"_c12": "0",
+												"_c19": "0",
+												"_c6": "NC",
+												"_c23": "25000"
+											},
+											{
+												"_c11": "1",
+												"_c18": "52582",
+												"_c21": "0",
+												"_c13": "5",
+												"_c3": "OH",
+												"_c5": "U.S. BANK NATIONAL ASSOCIATION",
+												"_c10": "5",
+												"_c0": "1839585001",
+												"_c4": "44314",
+												"_c9": "84",
+												"_c22": "50000",
+												"_c14": "0",
+												"_c8": "2006",
+												"_c17": "false",
+												"_c20": "P I F",
+												"_c1": "FIVE STAR MOLD COMPANY",
+												"_c16": "true",
+												"_c7": "332321",
+												"_c15": "1",
+												"_c2": "AKRON",
+												"_c12": "0",
+												"_c19": "0",
+												"_c6": "OH",
+												"_c23": "25000"
+											},
+											{
+												"_c11": "1",
+												"_c18": "475000",
+												"_c21": "444623",
+												"_c13": "0",
+												"_c3": "KS",
+												"_c5": "BANK OF AMERICA NATL ASSOC",
+												"_c10": "21",
+												"_c0": "1839593001",
+												"_c4": "67301",
+												"_c9": "120",
+												"_c22": "475000",
+												"_c14": "0",
+												"_c8": "1984",
+												"_c17": "false",
+												"_c20": "CHGOFF",
+												"_c1": "MIDWEST FOREST PRODUCTS",
+												"_c16": "false",
+												"_c7": "0",
+												"_c15": "0",
+												"_c2": "INDEPENDENCE",
+												"_c12": "0",
+												"_c19": "0",
+												"_c6": "NC",
+												"_c23": "285000"
+											},
+											{
+												"_c11": "1",
+												"_c18": "63100",
+												"_c21": "0",
+												"_c13": "1",
+												"_c3": "ND",
+												"_c5": "ALERUS FINANCIAL NATL ASSOC",
+												"_c10": "1",
+												"_c0": "1839596000",
+												"_c4": "58018",
+												"_c9": "60",
+												"_c22": "63100",
+												"_c14": "1",
+												"_c8": "2006",
+												"_c17": "false",
+												"_c20": "P I F",
+												"_c1": "VICTORY RACING",
+												"_c16": "false",
+												"_c7": "713990",
+												"_c15": "2",
+												"_c2": "COLFAX",
+												"_c12": "1",
+												"_c19": "0",
+												"_c6": "ND",
+												"_c23": "31550"
+											},
+											{
+												"_c11": "2",
+												"_c18": "2000000",
+												"_c21": "791993",
+												"_c13": "8",
+												"_c3": "CA",
+												"_c5": "WILSHIRE BANK",
+												"_c10": "8",
+												"_c0": "1839605005",
+												"_c4": "90004",
+												"_c9": "212",
+												"_c22": "2000000",
+												"_c14": "0",
+												"_c8": "2006",
+												"_c17": "false",
+												"_c20": "CHGOFF",
+												"_c1": "Yellow Cafe",
+												"_c16": "false",
+												"_c7": "722213",
+												"_c15": "1",
+												"_c2": "LOS ANGELES",
+												"_c12": "0",
+												"_c19": "0",
+												"_c6": "CA",
+												"_c23": "1500000"
+											},
+											{
+												"_c11": "1",
+												"_c18": "50000",
+												"_c21": "0",
+												"_c13": "2",
+												"_c3": "NY",
+												"_c5": "CITIZENS BANK NATL ASSOC",
+												"_c10": "2",
+												"_c0": "1839615008",
+												"_c4": "10980",
+												"_c9": "60",
+												"_c22": "50000",
+												"_c14": "0",
+												"_c8": "2006",
+												"_c17": "false",
+												"_c20": "P I F",
+												"_c1": "STEPHAN H. RUSH DBA RUSH CHIRO",
+												"_c16": "false",
+												"_c7": "621310",
+												"_c15": "1",
+												"_c2": "STONY POINT",
+												"_c12": "0",
+												"_c19": "0",
+												"_c6": "RI",
+												"_c23": "25000"
+											},
+											{
+												"_c11": "2",
+												"_c18": "124597",
+												"_c21": "0",
+												"_c13": "1",
+												"_c3": "WA",
+												"_c5": "U.S. BANK NATIONAL ASSOCIATION",
+												"_c10": "1",
+												"_c0": "1839625000",
+												"_c4": "98296",
+												"_c9": "84",
+												"_c22": "50000",
+												"_c14": "0",
+												"_c8": "2006",
+												"_c17": "false",
+												"_c20": "P I F",
+												"_c1": "BP Floorcovering Inc",
+												"_c16": "true",
+												"_c7": "238330",
+												"_c15": "1",
+												"_c2": "SNOHOMISH",
+												"_c12": "0",
+												"_c19": "0",
+												"_c6": "OH",
+												"_c23": "25000"
+											},
+											{
+												"_c11": "1",
+												"_c18": "50459",
+												"_c21": "43576",
+												"_c13": "4",
+												"_c3": "CA",
+												"_c5": "CALIFORNIA BANK & TRUST",
+												"_c10": "4",
+												"_c0": "1839635003",
+												"_c4": "90010",
+												"_c9": "45",
+												"_c22": "50000",
+												"_c14": "0",
+												"_c8": "2006",
+												"_c17": "false",
+												"_c20": "CHGOFF",
+												"_c1": "Edwin Choi dba Edwin Choi, M.D",
+												"_c16": "true",
+												"_c7": "621111",
+												"_c15": "1",
+												"_c2": "Los Angeles",
+												"_c12": "1",
+												"_c19": "0",
+												"_c6": "CA",
+												"_c23": "25000"
+											},
+											{
+												"_c11": "1",
+												"_c18": "438000",
+												"_c21": "0",
+												"_c13": "0",
+												"_c3": "LA",
+												"_c10": "37",
+												"_c0": "1839653006",
+												"_c4": "71457",
+												"_c9": "240",
+												"_c22": "438000",
+												"_c14": "0",
+												"_c8": "1984",
+												"_c17": "false",
+												"_c20": "P I F",
+												"_c1": "SAFARI INDUSTRIES OF NATCHITOC",
+												"_c16": "false",
+												"_c7": "0",
+												"_c15": "0",
+												"_c2": "NATCHITOCHES",
+												"_c12": "0",
+												"_c19": "0",
+												"_c23": "438000"
+											}
+										],
+										"schema": {
+											"_c0": "string",
+											"_c1": "string",
+											"_c2": "string",
+											"_c3": "string",
+											"_c4": "string",
+											"_c5": "string",
+											"_c6": "string",
+											"_c7": "string",
+											"_c8": "string",
+											"_c9": "string",
+											"_c10": "string",
+											"_c11": "string",
+											"_c12": "string",
+											"_c13": "string",
+											"_c14": "string",
+											"_c15": "string",
+											"_c16": "string",
+											"_c17": "string",
+											"_c18": "string",
+											"_c19": "string",
+											"_c20": "string",
+											"_c21": "string",
+											"_c22": "string",
+											"_c23": "string"
+										}
+									},
+									"isSummary": false,
+									"language": "scala"
+								},
+								"persist_state": {
+									"view": {
+										"type": "details",
+										"tableOptions": {},
+										"chartOptions": {
+											"chartType": "bar",
+											"aggregationType": "count",
+											"categoryFieldKeys": [
+												"_c0"
+											],
+											"seriesFieldKeys": [
+												"_c0"
+											],
+											"isStacked": false
+										}
+									}
+								}
+							}
+						}
+					},
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/6f931dc1-9715-4a59-a849-0c049740fa0f/resourceGroups/Chubb/providers/Microsoft.Synapse/workspaces/srgosynapseunnmgd/bigDataPools/test123",
+						"name": "test123",
+						"type": "Spark",
+						"endpoint": "https://srgosynapseunnmgd.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/test123",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.read.load('abfss://sbacurated@srgostorgen2hier.dfs.core.windows.net/part-merged.csv', format='csv'\r\n",
+							"## If header exists uncomment line below\r\n",
+							"##, header=True\r\n",
+							")\r\n",
+							"display(df.limit(10))"
+						],
+						"outputs": [],
+						"execution_count": 1
+					}
+				]
 			},
 			"dependsOn": []
 		}

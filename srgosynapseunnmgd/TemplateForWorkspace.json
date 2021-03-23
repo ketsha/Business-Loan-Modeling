@@ -187,6 +187,7 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/dataflows/Clean Loan Raw data')]",
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
 				"[concat(variables('workspaceId'), '/datasets/DS_Binarysourcerawdata')]",
 				"[concat(variables('workspaceId'), '/datasets/DS_BinaryRaw')]",
 				"[concat(variables('workspaceId'), '/linkedServices/AzureML_LS')]"
@@ -1647,12 +1648,12 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 5')]",
+			"name": "[concat(parameters('workspaceName'), '/ONNX SP script')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
 				"content": {
-					"query": "CREATE PROCEDURE sba\nAS\nBEGIN\n\nSELECT\n    [LoanNr_ChkDgt],\n    CAST([Name] AS [varchar]) AS [Name],\n    CAST([City] AS [varchar]) AS [City],\n    CAST([State] AS [varchar]) AS [State],\n    [Zip],\n    CAST([Bank] AS [varchar]) AS [Bank],\n    CAST([BankState] AS [varchar]) AS [BankState],\n    [NAICS],\n    CAST([ApprovalDate] AS [varchar]) AS [ApprovalDate],\n    [ApprovalFY],\n    [Term],\n    [NoEmp],\n    CAST([NewExist] AS [real]) AS [NewExist],\n    [CreateJob],\n    [RetainedJob],\n    [FranchiseCode],\n    [UrbanRural],\n    CAST([RevLineCr] AS [varchar]) AS [RevLineCr],\n    CAST([LowDoc] AS [varchar]) AS [LowDoc],\n    CAST([DisbursementDate] AS [varchar]) AS [DisbursementDate],\n    [DisbursementGross],\n    CAST([MIS_Status] AS [real]) AS [MIS_Status],\n    [ChgOffPrinGr],\n    [SBA_Appv]\nINTO [dbo].[#SBACurated2]\nFROM [dbo].[SBACurated2];\n\nSELECT *\nFROM PREDICT (MODEL = (SELECT [model] FROM dbo.onnxmodels WHERE [ID] = 'srgosynapseunnmgd-sbacurated-20210323124733-Best4:1'),\n              DATA = [dbo].[#SBACurated2],\n              RUNTIME = ONNX) WITH ([variable1] [real])\n\nEND\nGO\n\nEXEC sba",
+					"query": "ALTER PROCEDURE sba\nAS\nBEGIN\n\nSELECT\n    [LoanNr_ChkDgt],\n    CAST([Name] AS [varchar]) AS [Name],\n    CAST([City] AS [varchar]) AS [City],\n    CAST([State] AS [varchar]) AS [State],\n    [Zip],\n    CAST([Bank] AS [varchar]) AS [Bank],\n    CAST([BankState] AS [varchar]) AS [BankState],\n    [NAICS],\n    CAST([ApprovalDate] AS [varchar]) AS [ApprovalDate],\n    [ApprovalFY],\n    [Term],\n    [NoEmp],\n    CAST([NewExist] AS [real]) AS [NewExist],\n    [CreateJob],\n    [RetainedJob],\n    [FranchiseCode],\n    [UrbanRural],\n    CAST([RevLineCr] AS [varchar]) AS [RevLineCr],\n    CAST([LowDoc] AS [varchar]) AS [LowDoc],\n    CAST([DisbursementDate] AS [varchar]) AS [DisbursementDate],\n    [DisbursementGross],\n    CAST([MIS_Status] AS [real]) AS [MIS_Status],\n    [ChgOffPrinGr],\n    [SBA_Appv]\nINTO [dbo].[#SBACurated2]\nFROM [dbo].[SBACurated2];\n\nSELECT *\nFROM PREDICT (MODEL = (SELECT [model] FROM dbo.onnxmodels WHERE [ID] = 'srgosynapseunnmgd-sbacurated-20210323124733-Best4:1'),\n              DATA = [dbo].[#SBACurated2],\n              RUNTIME = ONNX) WITH ([variable1] [real])\n\nEND\nGO\n\nEXEC sba",
 					"metadata": {
 						"language": "sql"
 					},
@@ -1691,9 +1692,6 @@
 				},
 				"metadata": {
 					"saveOutput": true,
-					"synapse_widget": {
-						"version": "0.1"
-					},
 					"kernelspec": {
 						"name": "synapse_pyspark",
 						"display_name": "Synapse PySpark"
@@ -1713,12 +1711,15 @@
 						"sparkVersion": "2.4",
 						"nodeCount": 10,
 						"cores": 16,
-						"memory": 112
-					}
+						"memory": 112,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
 				},
 				"cells": [
 					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"import azureml.core\n",
 							"\n",
@@ -1731,6 +1732,7 @@
 					},
 					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"subscription_id = \"6f931dc1-9715-4a59-a849-0c049740fa0f\"\n",
 							"resource_group = \"Chubb\"\n",
@@ -1745,6 +1747,7 @@
 					},
 					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"df = spark.sql(\"SELECT * FROM default.sbacurated LIMIT 6000\")\n",
 							"\n",
@@ -1756,6 +1759,7 @@
 					},
 					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"automl_config = AutoMLConfig(spark_context = sc,\n",
 							"                             task = \"regression\",\n",
@@ -1771,6 +1775,7 @@
 					},
 					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"run = experiment.submit(automl_config)"
 						],
@@ -1779,6 +1784,7 @@
 					},
 					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"displayHTML(\"<a href={} target='_blank'>Your experiment in Azure Machine Learning portal: {}</a>\".format(run.get_portal_url(), run.id))"
 						],
@@ -1787,6 +1793,7 @@
 					},
 					{
 						"cell_type": "code",
+						"metadata": {},
 						"source": [
 							"run.wait_for_completion()\n",
 							"\n",

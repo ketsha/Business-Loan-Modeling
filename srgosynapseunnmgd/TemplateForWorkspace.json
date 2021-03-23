@@ -27,6 +27,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'srgosynapseunnmgd-WorkspaceDefaultSqlServer'"
 		},
+		"linkedService1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'linkedService1'"
+		},
 		"AzureML_LS_properties_typeProperties_subscriptionId": {
 			"type": "string",
 			"defaultValue": "6f931dc1-9715-4a59-a849-0c049740fa0f"
@@ -56,6 +60,221 @@
 		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
 	},
 	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoML Model Deploy')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "srgolarge",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "56g",
+					"driverCores": 8,
+					"executorMemory": "56g",
+					"executorCores": 8,
+					"numExecutors": 8,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "8",
+						"spark.dynamicAllocation.maxExecutors": "8"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1",
+						"state": {}
+					},
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/6f931dc1-9715-4a59-a849-0c049740fa0f/resourceGroups/Chubb/providers/Microsoft.Synapse/workspaces/srgosynapseunnmgd/bigDataPools/srgolarge",
+						"name": "srgolarge",
+						"type": "Spark",
+						"endpoint": "https://srgosynapseunnmgd.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/srgolarge",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 10,
+						"cores": 16,
+						"memory": 112,
+						"automaticScaleJobs": false
+					},
+					"sessionKeepAliveTimeout": 30
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"import azureml.core\n",
+							"\n",
+							"from azureml.core import Experiment, Workspace, Dataset, Datastore\n",
+							"from azureml.train.automl import AutoMLConfig\n",
+							"from azureml.data.dataset_factory import TabularDatasetFactory"
+						],
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"subscription_id = \"6f931dc1-9715-4a59-a849-0c049740fa0f\"\n",
+							"resource_group = \"Chubb\"\n",
+							"workspace_name = \"srgoaml\"\n",
+							"experiment_name = \"srgosynapseunnmgd-sbacurated-20210323124733\"\n",
+							"\n",
+							"ws = Workspace(subscription_id = subscription_id, resource_group = resource_group, workspace_name = workspace_name)\n",
+							"experiment = Experiment(ws, experiment_name)"
+						],
+						"outputs": [],
+						"execution_count": 2
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"df = spark.sql(\"SELECT * FROM default.sbacurated LIMIT 6000\")\n",
+							"\n",
+							"datastore = Datastore.get_default(ws)\n",
+							"dataset = TabularDatasetFactory.register_spark_dataframe(df, datastore, name = experiment_name + \"-dataset\")"
+						],
+						"outputs": [],
+						"execution_count": 3
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"automl_config = AutoMLConfig(spark_context = sc,\n",
+							"                             task = \"regression\",\n",
+							"                             training_data = dataset,\n",
+							"                             label_column_name = \"GrAppv\",\n",
+							"                             primary_metric = \"spearman_correlation\",\n",
+							"                             experiment_timeout_hours = 1,\n",
+							"                             max_concurrent_iterations = 8,\n",
+							"                             enable_onnx_compatible_models = True)"
+						],
+						"outputs": [],
+						"execution_count": 4
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"run = experiment.submit(automl_config)"
+						],
+						"outputs": [],
+						"execution_count": 5
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"displayHTML(\"<a href={} target='_blank'>Your experiment in Azure Machine Learning portal: {}</a>\".format(run.get_portal_url(), run.id))"
+						],
+						"outputs": [],
+						"execution_count": 6
+					},
+					{
+						"cell_type": "code",
+						"metadata": {},
+						"source": [
+							"run.wait_for_completion()\n",
+							"\n",
+							"import onnxruntime\n",
+							"import mlflow\n",
+							"import mlflow.onnx\n",
+							"\n",
+							"from mlflow.models.signature import ModelSignature\n",
+							"from mlflow.types import DataType\n",
+							"from mlflow.types.schema import ColSpec, Schema\n",
+							"\n",
+							"# Get best model from automl run\n",
+							"best_run, onnx_model = run.get_output(return_onnx_model=True)\n",
+							"\n",
+							"# Define utility functions to infer the schema of ONNX model\n",
+							"def _infer_schema(data):\n",
+							"    res = []\n",
+							"    for _, col in enumerate(data):\n",
+							"        t = col.type.replace(\"tensor(\", \"\").replace(\")\", \"\")\n",
+							"        if t in [\"bool\"]:\n",
+							"            dt = DataType.boolean\n",
+							"        elif t in [\"int8\", \"uint8\", \"int16\", \"uint16\", \"int32\"]:\n",
+							"            dt = DateType.integer\n",
+							"        elif t in [\"uint32\", \"int64\"]:\n",
+							"            dt = DataType.long\n",
+							"        elif t in [\"float16\", \"bfloat16\", \"float\"]:\n",
+							"            dt = DataType.float\n",
+							"        elif t in [\"double\"]:\n",
+							"            dt = DataType.double\n",
+							"        elif t in [\"string\"]:\n",
+							"            dt = DataType.string\n",
+							"        else:\n",
+							"            raise Exception(\"Unsupported type: \" + t)\n",
+							"        res.append(ColSpec(type=dt, name=col.name))\n",
+							"    return Schema(res)\n",
+							"\n",
+							"def _infer_signature(onnx_model):\n",
+							"    onnx_model_bytes = onnx_model.SerializeToString()\n",
+							"    onnx_runtime = onnxruntime.InferenceSession(onnx_model_bytes)\n",
+							"    inputs = _infer_schema(onnx_runtime.get_inputs())\n",
+							"    outputs = _infer_schema(onnx_runtime.get_outputs())\n",
+							"    return ModelSignature(inputs, outputs)\n",
+							"\n",
+							"# Infer signature of ONNX model\n",
+							"signature = _infer_signature(onnx_model)\n",
+							"\n",
+							"artifact_path = experiment_name + \"_artifact\"\n",
+							"mlflow.set_tracking_uri(ws.get_mlflow_tracking_uri())\n",
+							"mlflow.set_experiment(experiment_name)\n",
+							"\n",
+							"with mlflow.start_run() as run:\n",
+							"    # Save the model to the outputs directory for capture\n",
+							"    mlflow.onnx.log_model(onnx_model, artifact_path, signature=signature)\n",
+							"\n",
+							"    # Register the model to AML model registry\n",
+							"    mlflow.register_model(\"runs:/\" + run.info.run_id + \"/\" + artifact_path, \"srgosynapseunnmgd-sbacurated-20210323124733-Best4\")"
+						],
+						"outputs": [],
+						"execution_count": 7
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 4')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF NOT EXISTS (SELECT * FROM sys.objects O JOIN sys.schemas S ON O.schema_id = S.schema_id WHERE O.NAME = 'SBACurated2' AND O.TYPE = 'U' AND S.NAME = 'dbo')\nCREATE TABLE dbo.SBACurated2\n\t(\n\t [LoanNr_ChkDgt] bigint,\n\t [Name] nvarchar(4000),\n\t [City] nvarchar(4000),\n\t [State] nvarchar(4000),\n\t [Zip] bigint,\n\t [Bank] nvarchar(4000),\n\t [BankState] nvarchar(4000),\n\t [NAICS] bigint,\n\t [ApprovalDate] nvarchar(4000),\n\t [ApprovalFY] bigint,\n\t [Term] bigint,\n\t [NoEmp] bigint,\n\t [NewExist] bigint,\n\t [CreateJob] bigint,\n\t [RetainedJob] bigint,\n\t [FranchiseCode] bigint,\n\t [UrbanRural] bigint,\n\t [RevLineCr] bit,\n\t [LowDoc] bit,\n\t [DisbursementDate] nvarchar(4000),\n\t [DisbursementGross] bigint,\n\t [BalanceGross] bigint,\n\t [MIS_Status] bigint,\n\t [ChgOffPrinGr] bigint,\n\t [GrAppv] bigint,\n\t [SBA_Appv] bigint\n\t)\nWITH\n\t(\n\tDISTRIBUTION = ROUND_ROBIN,\n\t CLUSTERED COLUMNSTORE INDEX\n\t -- HEAP\n\t)\nGO\n\n--Uncomment the 4 lines below to create a stored procedure for data pipeline orchestration​\nCREATE PROC bulk_load_SBACurated2\nAS\nBEGIN\nCOPY INTO dbo.SBACurated2\n(LoanNr_ChkDgt 1, Name 2, City 3, State 4, Zip 5, Bank 6, BankState 7, NAICS 8, ApprovalDate 9, ApprovalFY 10, Term 11, NoEmp 12, NewExist 13, CreateJob 14, RetainedJob 15, FranchiseCode 16, UrbanRural 17, RevLineCr 18, LowDoc 19, DisbursementDate 20, DisbursementGross 21, BalanceGross 22, MIS_Status 23, ChgOffPrinGr 24, GrAppv 25, SBA_Appv 26)\nFROM 'https://srgostorgen2hier.dfs.core.windows.net/sbacurated/part-merged.csv'\nWITH\n(\n\tFILE_TYPE = 'CSV'\n\t,MAXERRORS = 0\n\t,FIRSTROW = 2\n)\n--END\nGO\n\nSELECT TOP 100 * FROM dba.SBACurated2\nGO",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "srgosqlpoolsyn",
+						"databaseName": "srgosqlpoolsyn"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
 		{
 			"name": "[concat(parameters('workspaceName'), '/Clean Raw data')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
@@ -189,6 +408,352 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/CopyPipeline_jwv')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy_jwv",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Source",
+								"value": "sbacurated//part-merged.csv"
+							},
+							{
+								"name": "Destination",
+								"value": "dbo.SBACurated2"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobFSReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings",
+									"skipLineCount": 0
+								}
+							},
+							"sink": {
+								"type": "SqlPoolSink",
+								"allowPolyBase": true,
+								"polyBaseSettings": {
+									"rejectValue": 0,
+									"rejectType": "value",
+									"useTypeDefault": true
+								}
+							},
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "linkedService1",
+									"type": "LinkedServiceReference"
+								}
+							},
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "LoanNr_ChkDgt",
+											"type": "String"
+										},
+										"sink": {
+											"name": "LoanNr_ChkDgt",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "Name",
+											"type": "String"
+										},
+										"sink": {
+											"name": "Name",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "City",
+											"type": "String"
+										},
+										"sink": {
+											"name": "City",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "State",
+											"type": "String"
+										},
+										"sink": {
+											"name": "State",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "Zip",
+											"type": "String"
+										},
+										"sink": {
+											"name": "Zip",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "Bank",
+											"type": "String"
+										},
+										"sink": {
+											"name": "Bank",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "BankState",
+											"type": "String"
+										},
+										"sink": {
+											"name": "BankState",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "NAICS",
+											"type": "String"
+										},
+										"sink": {
+											"name": "NAICS",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "ApprovalDate",
+											"type": "String"
+										},
+										"sink": {
+											"name": "ApprovalDate",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "ApprovalFY",
+											"type": "String"
+										},
+										"sink": {
+											"name": "ApprovalFY",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "Term",
+											"type": "String"
+										},
+										"sink": {
+											"name": "Term",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "NoEmp",
+											"type": "String"
+										},
+										"sink": {
+											"name": "NoEmp",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "NewExist",
+											"type": "String"
+										},
+										"sink": {
+											"name": "NewExist",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "CreateJob",
+											"type": "String"
+										},
+										"sink": {
+											"name": "CreateJob",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "RetainedJob",
+											"type": "String"
+										},
+										"sink": {
+											"name": "RetainedJob",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "FranchiseCode",
+											"type": "String"
+										},
+										"sink": {
+											"name": "FranchiseCode",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "UrbanRural",
+											"type": "String"
+										},
+										"sink": {
+											"name": "UrbanRural",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "RevLineCr",
+											"type": "String"
+										},
+										"sink": {
+											"name": "RevLineCr",
+											"type": "Boolean"
+										}
+									},
+									{
+										"source": {
+											"name": "LowDoc",
+											"type": "String"
+										},
+										"sink": {
+											"name": "LowDoc",
+											"type": "Boolean"
+										}
+									},
+									{
+										"source": {
+											"name": "DisbursementDate",
+											"type": "String"
+										},
+										"sink": {
+											"name": "DisbursementDate",
+											"type": "String"
+										}
+									},
+									{
+										"source": {
+											"name": "DisbursementGross",
+											"type": "String"
+										},
+										"sink": {
+											"name": "DisbursementGross",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "BalanceGross",
+											"type": "String"
+										},
+										"sink": {
+											"name": "BalanceGross",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "MIS_Status",
+											"type": "String"
+										},
+										"sink": {
+											"name": "MIS_Status",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "ChgOffPrinGr",
+											"type": "String"
+										},
+										"sink": {
+											"name": "ChgOffPrinGr",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "GrAppv",
+											"type": "String"
+										},
+										"sink": {
+											"name": "GrAppv",
+											"type": "Int64"
+										}
+									},
+									{
+										"source": {
+											"name": "SBA_Appv",
+											"type": "String"
+										},
+										"sink": {
+											"name": "SBA_Appv",
+											"type": "Int64"
+										}
+									}
+								]
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "SourceDataset_jwv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DestinationDataset_jwv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					}
+				],
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/SourceDataset_jwv')]",
+				"[concat(variables('workspaceId'), '/datasets/DestinationDataset_jwv')]",
+				"[concat(variables('workspaceId'), '/linkedServices/linkedService1')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/DS_BinaryRaw')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -230,6 +795,149 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/linkedServices/LS_SBASourceRawdata')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DestinationDataset_jwv')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "SqlPoolTable",
+				"schema": [
+					{
+						"name": "LoanNr_ChkDgt",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "Name",
+						"type": "nvarchar"
+					},
+					{
+						"name": "City",
+						"type": "nvarchar"
+					},
+					{
+						"name": "State",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Zip",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "Bank",
+						"type": "nvarchar"
+					},
+					{
+						"name": "BankState",
+						"type": "nvarchar"
+					},
+					{
+						"name": "NAICS",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "ApprovalDate",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ApprovalFY",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "Term",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "NoEmp",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "NewExist",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "CreateJob",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "RetainedJob",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "FranchiseCode",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "UrbanRural",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "RevLineCr",
+						"type": "bit"
+					},
+					{
+						"name": "LowDoc",
+						"type": "bit"
+					},
+					{
+						"name": "DisbursementDate",
+						"type": "nvarchar"
+					},
+					{
+						"name": "DisbursementGross",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "BalanceGross",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "MIS_Status",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "ChgOffPrinGr",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "GrAppv",
+						"type": "bigint",
+						"precision": 19
+					},
+					{
+						"name": "SBA_Appv",
+						"type": "bigint",
+						"precision": 19
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "SBACurated2"
+				},
+				"sqlPool": {
+					"referenceName": "srgosqlpoolsyn",
+					"type": "SqlPoolReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/sqlPools/srgosqlpoolsyn')]"
 			]
 		},
 		{
@@ -723,6 +1431,140 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/SourceDataset_jwv')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "srgostorgen2hier",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"fileName": "part-merged.csv",
+						"fileSystem": "sbacurated"
+					},
+					"columnDelimiter": ",",
+					"rowDelimiter": "\n",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "LoanNr_ChkDgt",
+						"type": "String"
+					},
+					{
+						"name": "Name",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "Zip",
+						"type": "String"
+					},
+					{
+						"name": "Bank",
+						"type": "String"
+					},
+					{
+						"name": "BankState",
+						"type": "String"
+					},
+					{
+						"name": "NAICS",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalDate",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalFY",
+						"type": "String"
+					},
+					{
+						"name": "Term",
+						"type": "String"
+					},
+					{
+						"name": "NoEmp",
+						"type": "String"
+					},
+					{
+						"name": "NewExist",
+						"type": "String"
+					},
+					{
+						"name": "CreateJob",
+						"type": "String"
+					},
+					{
+						"name": "RetainedJob",
+						"type": "String"
+					},
+					{
+						"name": "FranchiseCode",
+						"type": "String"
+					},
+					{
+						"name": "UrbanRural",
+						"type": "String"
+					},
+					{
+						"name": "RevLineCr",
+						"type": "String"
+					},
+					{
+						"name": "LowDoc",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementGross",
+						"type": "String"
+					},
+					{
+						"name": "BalanceGross",
+						"type": "String"
+					},
+					{
+						"name": "MIS_Status",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffPrinGr",
+						"type": "String"
+					},
+					{
+						"name": "GrAppv",
+						"type": "String"
+					},
+					{
+						"name": "SBA_Appv",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/srgostorgen2hier')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/AzureML_LS')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -905,7 +1747,7 @@
 							"name": "RemoveUnnecessaryColumns"
 						}
 					],
-					"script": "source(output(\n\t\tLoanNr_ChkDgt as integer '000',\n\t\tName as string,\n\t\tCity as string,\n\t\tState as string,\n\t\tZip as integer '000',\n\t\tBank as string,\n\t\tBankState as string,\n\t\tNAICS as integer,\n\t\tApprovalDate as string,\n\t\tApprovalFY as short,\n\t\tTerm as short,\n\t\tNoEmp as short,\n\t\tNewExist as short,\n\t\tCreateJob as short,\n\t\tRetainedJob as short,\n\t\tFranchiseCode as integer,\n\t\tUrbanRural as short,\n\t\tRevLineCr as boolean,\n\t\tLowDoc as boolean,\n\t\tChgOffDate as string,\n\t\tDisbursementDate as string,\n\t\tDisbursementGross as integer '$###,###',\n\t\tBalanceGross as integer '$###,###',\n\t\tMIS_Status as string,\n\t\tChgOffPrinGr as integer '$###,###',\n\t\tGrAppv as integer '$###,###',\n\t\tSBA_Appv as integer '$###,###'\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> PullSourceData\nPullSourceData derive(LoanNr_ChkDgt = toInteger(LoanNr_ChkDgt),\n\t\tZip = toInteger(Zip),\n\t\tNAICS = toInteger(NAICS),\n\t\tTerm = toInteger(Term),\n\t\tNoEmp = toInteger(NoEmp),\n\t\tCreateJob = toInteger(CreateJob),\n\t\tRetainedJob = toInteger(RetainedJob),\n\t\tFranchiseCode = toInteger(FranchiseCode),\n\t\tUrbanRural = toInteger(UrbanRural),\n\t\tNewExist = toFloat(NewExist),\n\t\tMIS_Status = toInteger(case(MIS_Status =='P I F', '1', MIS_Status =='CHGOFF', '0'))) ~> DerivedColumn1\nDerivedColumn1 select(mapColumn(\n\t\tLoanNr_ChkDgt,\n\t\tName,\n\t\tCity,\n\t\tState,\n\t\tZip,\n\t\tBank,\n\t\tBankState,\n\t\tNAICS,\n\t\tApprovalDate,\n\t\tApprovalFY,\n\t\tTerm,\n\t\tNoEmp,\n\t\tNewExist,\n\t\tCreateJob,\n\t\tRetainedJob,\n\t\tFranchiseCode,\n\t\tUrbanRural,\n\t\tRevLineCr,\n\t\tLowDoc,\n\t\tDisbursementDate,\n\t\tDisbursementGross,\n\t\tBalanceGross,\n\t\tMIS_Status,\n\t\tChgOffPrinGr,\n\t\tGrAppv,\n\t\tSBA_Appv\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveUnnecessaryColumns\nRemoveUnnecessaryColumns sink(input(\n\t\tColumn_1 as string,\n\t\tColumn_2 as string,\n\t\tColumn_3 as string,\n\t\tColumn_4 as string,\n\t\tColumn_5 as string,\n\t\tColumn_6 as string,\n\t\tColumn_7 as string,\n\t\tColumn_8 as string,\n\t\tColumn_9 as string,\n\t\tColumn_10 as string,\n\t\tColumn_11 as string,\n\t\tColumn_12 as string,\n\t\tColumn_13 as string,\n\t\tColumn_14 as string,\n\t\tColumn_15 as string,\n\t\tColumn_16 as string,\n\t\tColumn_17 as string,\n\t\tColumn_18 as string,\n\t\tColumn_19 as string,\n\t\tColumn_20 as string,\n\t\tColumn_21 as string,\n\t\tColumn_22 as string,\n\t\tColumn_23 as string,\n\t\tColumn_24 as string,\n\t\tColumn_25 as string,\n\t\tColumn_26 as string,\n\t\tColumn_27 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\ttruncate: true,\n\tpartitionBy('hash', 1),\n\tsaveOrder: 1) ~> Curateddata"
+					"script": "source(output(\n\t\tLoanNr_ChkDgt as integer '000',\n\t\tName as string,\n\t\tCity as string,\n\t\tState as string,\n\t\tZip as integer '000',\n\t\tBank as string,\n\t\tBankState as string,\n\t\tNAICS as integer,\n\t\tApprovalDate as string,\n\t\tApprovalFY as short,\n\t\tTerm as short,\n\t\tNoEmp as short,\n\t\tNewExist as short,\n\t\tCreateJob as short,\n\t\tRetainedJob as short,\n\t\tFranchiseCode as integer,\n\t\tUrbanRural as short,\n\t\tRevLineCr as boolean,\n\t\tLowDoc as boolean,\n\t\tChgOffDate as string,\n\t\tDisbursementDate as string,\n\t\tDisbursementGross as integer '$###,###',\n\t\tBalanceGross as integer '$###,###',\n\t\tMIS_Status as string,\n\t\tChgOffPrinGr as integer '$###,###',\n\t\tGrAppv as integer '$###,###',\n\t\tSBA_Appv as integer '$###,###'\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> PullSourceData\nPullSourceData derive(LoanNr_ChkDgt = toInteger(LoanNr_ChkDgt),\n\t\tZip = toInteger(Zip),\n\t\tNAICS = toInteger(NAICS),\n\t\tTerm = toInteger(Term),\n\t\tNoEmp = toInteger(NoEmp),\n\t\tCreateJob = toInteger(CreateJob),\n\t\tRetainedJob = toInteger(RetainedJob),\n\t\tFranchiseCode = toInteger(FranchiseCode),\n\t\tUrbanRural = toInteger(UrbanRural),\n\t\tNewExist = toInteger(case(NewExist == 1 ,0 , NewExist ==2, 1)),\n\t\tMIS_Status = toInteger(case(MIS_Status =='P I F', '1', MIS_Status =='CHGOFF', '0')),\n\t\tApprovalFY = toInteger(ApprovalFY)) ~> DerivedColumn1\nDerivedColumn1 select(mapColumn(\n\t\tLoanNr_ChkDgt,\n\t\tName,\n\t\tCity,\n\t\tState,\n\t\tZip,\n\t\tBank,\n\t\tBankState,\n\t\tNAICS,\n\t\tApprovalDate,\n\t\tApprovalFY,\n\t\tTerm,\n\t\tNoEmp,\n\t\tNewExist,\n\t\tCreateJob,\n\t\tRetainedJob,\n\t\tFranchiseCode,\n\t\tUrbanRural,\n\t\tRevLineCr,\n\t\tLowDoc,\n\t\tDisbursementDate,\n\t\tDisbursementGross,\n\t\tBalanceGross,\n\t\tMIS_Status,\n\t\tChgOffPrinGr,\n\t\tGrAppv,\n\t\tSBA_Appv\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveUnnecessaryColumns\nRemoveUnnecessaryColumns sink(input(\n\t\tColumn_1 as string,\n\t\tColumn_2 as string,\n\t\tColumn_3 as string,\n\t\tColumn_4 as string,\n\t\tColumn_5 as string,\n\t\tColumn_6 as string,\n\t\tColumn_7 as string,\n\t\tColumn_8 as string,\n\t\tColumn_9 as string,\n\t\tColumn_10 as string,\n\t\tColumn_11 as string,\n\t\tColumn_12 as string,\n\t\tColumn_13 as string,\n\t\tColumn_14 as string,\n\t\tColumn_15 as string,\n\t\tColumn_16 as string,\n\t\tColumn_17 as string,\n\t\tColumn_18 as string,\n\t\tColumn_19 as string,\n\t\tColumn_20 as string,\n\t\tColumn_21 as string,\n\t\tColumn_22 as string,\n\t\tColumn_23 as string,\n\t\tColumn_24 as string,\n\t\tColumn_25 as string,\n\t\tColumn_26 as string,\n\t\tColumn_27 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\ttruncate: true,\n\tpartitionBy('hash', 1),\n\tsaveOrder: 1) ~> Curateddata"
 				}
 			},
 			"dependsOn": [
@@ -979,19 +1821,6 @@
 				"type": "SqlQuery"
 			},
 			"dependsOn": []
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/srgosqlpoolsyn')]",
-			"type": "Microsoft.Synapse/workspaces/sqlPools",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"collation": "SQL_Latin1_General_CP1_CI_AS",
-				"maxSizeBytes": 263882790666240,
-				"restorePointInTime": "0001-01-01T00:00:00",
-				"annotations": []
-			},
-			"dependsOn": [],
-			"location": "eastus2"
 		},
 		{
 			"name": "[concat(parameters('workspaceName'), '/Notebook 1')]",
@@ -1318,7 +2147,6 @@
 								"persist_state": {
 									"view": {
 										"type": "details",
-										"tableOptions": {},
 										"chartOptions": {
 											"chartType": "bar",
 											"aggregationType": "count",
@@ -1354,10 +2182,8 @@
 						"sparkVersion": "2.4",
 						"nodeCount": 10,
 						"cores": 4,
-						"memory": 28,
-						"automaticScaleJobs": false
-					},
-					"sessionKeepAliveTimeout": 30
+						"memory": 28
+					}
 				},
 				"cells": [
 					{
@@ -1380,6 +2206,172 @@
 						"execution_count": 1
 					}
 				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Notebook 2')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "test123",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1"
+					},
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/6f931dc1-9715-4a59-a849-0c049740fa0f/resourceGroups/Chubb/providers/Microsoft.Synapse/workspaces/srgosynapseunnmgd/bigDataPools/test123",
+						"name": "test123",
+						"type": "Spark",
+						"endpoint": "https://srgosynapseunnmgd.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/test123",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 10,
+						"cores": 4,
+						"memory": 28
+					}
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							},
+							"collapsed": false
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.read.load('abfss://sbacurated@srgostorgen2hier.dfs.core.windows.net/part-merged.csv', format='csv'\r\n",
+							"## If header exists uncomment line below\r\n",
+							", header=True, inferschema=True\r\n",
+							")\r\n",
+							""
+						],
+						"outputs": [],
+						"execution_count": 5
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"collapsed": true
+						},
+						"source": [
+							"df.printSchema()"
+						],
+						"outputs": [],
+						"execution_count": 6
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"collapsed": true
+						},
+						"source": [
+							"df.write.mode(\"overwrite\").saveAsTable(\"default.SBACurated\")"
+						],
+						"outputs": [],
+						"execution_count": 7
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/srgosqlpoolsyn')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"restorePointInTime": "0001-01-01T00:00:00",
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "eastus2"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/linkedService1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('linkedService1_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 5')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "ALTER PROCEDURE dbo.sbaprocess\nAS\nBEGIN\n\nSELECT\n    [LoanNr_ChkDgt],\n    CAST([Name] AS [varchar]) AS [Name],\n    CAST([City] AS [varchar]) AS [City],\n    CAST([State] AS [varchar]) AS [State],\n    [Zip],\n    CAST([Bank] AS [varchar]) AS [Bank],\n    CAST([BankState] AS [varchar]) AS [BankState],\n    [NAICS],\n    CAST([ApprovalDate] AS [varchar]) AS [ApprovalDate],\n    [ApprovalFY],\n    [Term],\n    [NoEmp],\n    CAST([NewExist] AS [real]) AS [NewExist],\n    [CreateJob],\n    [RetainedJob],\n    [FranchiseCode],\n    [UrbanRural],\n    CAST([RevLineCr] AS [varchar]) AS [RevLineCr],\n    CAST([LowDoc] AS [varchar]) AS [LowDoc],\n    CAST([DisbursementDate] AS [varchar]) AS [DisbursementDate],\n    [DisbursementGross],\n    CAST([MIS_Status] AS [real]) AS [MIS_Status],\n    [ChgOffPrinGr],\n    [SBA_Appv]\nINTO [dbo].[#SBACurated2]\nFROM [dbo].[SBACurated2];\n\nSELECT *\nFROM PREDICT (MODEL = (SELECT [model] FROM dbo.onnxmodels WHERE [ID] = 'srgosynapseunnmgd-sbacurated-20210323124733-Best4:1'),\n              DATA = [dbo].[#SBACurated2],\n              RUNTIME = ONNX) WITH ([GrAppv] [real])\n\nEND\nGO\n\nexec sbaprocess",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "srgosqlpoolsyn",
+						"databaseName": "srgosqlpoolsyn"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
 			},
 			"dependsOn": []
 		}

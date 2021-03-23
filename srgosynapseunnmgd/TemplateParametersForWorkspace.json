@@ -20,6 +20,9 @@
 		"srgosynapseunnmgd-WorkspaceDefaultSqlServer_connectionString": {
 			"value": ""
 		},
+		"linkedService1_connectionString": {
+			"value": ""
+		},
 		"AzureML_LS_properties_typeProperties_subscriptionId": {
 			"value": "6f931dc1-9715-4a59-a849-0c049740fa0f"
 		},

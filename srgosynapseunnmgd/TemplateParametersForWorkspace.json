@@ -14,13 +14,13 @@
 		"LS_SBASourceRawdata_connectionString": {
 			"value": ""
 		},
+		"linkedService1_connectionString": {
+			"value": ""
+		},
 		"srgostorgen2hier_accountKey": {
 			"value": ""
 		},
 		"srgosynapseunnmgd-WorkspaceDefaultSqlServer_connectionString": {
-			"value": ""
-		},
-		"linkedService1_connectionString": {
 			"value": ""
 		},
 		"AzureML_LS_properties_typeProperties_subscriptionId": {

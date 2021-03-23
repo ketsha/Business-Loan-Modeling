@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 5",
+	"properties": {
+		"content": {
+			"query": "ALTER PROCEDURE dbo.sbaprocess\nAS\nBEGIN\n\nSELECT\n    [LoanNr_ChkDgt],\n    CAST([Name] AS [varchar]) AS [Name],\n    CAST([City] AS [varchar]) AS [City],\n    CAST([State] AS [varchar]) AS [State],\n    [Zip],\n    CAST([Bank] AS [varchar]) AS [Bank],\n    CAST([BankState] AS [varchar]) AS [BankState],\n    [NAICS],\n    CAST([ApprovalDate] AS [varchar]) AS [ApprovalDate],\n    [ApprovalFY],\n    [Term],\n    [NoEmp],\n    CAST([NewExist] AS [real]) AS [NewExist],\n    [CreateJob],\n    [RetainedJob],\n    [FranchiseCode],\n    [UrbanRural],\n    CAST([RevLineCr] AS [varchar]) AS [RevLineCr],\n    CAST([LowDoc] AS [varchar]) AS [LowDoc],\n    CAST([DisbursementDate] AS [varchar]) AS [DisbursementDate],\n    [DisbursementGross],\n    CAST([MIS_Status] AS [real]) AS [MIS_Status],\n    [ChgOffPrinGr],\n    [SBA_Appv]\nINTO [dbo].[#SBACurated2]\nFROM [dbo].[SBACurated2];\n\nSELECT *\nFROM PREDICT (MODEL = (SELECT [model] FROM dbo.onnxmodels WHERE [ID] = 'srgosynapseunnmgd-sbacurated-20210323124733-Best4:1'),\n              DATA = [dbo].[#SBACurated2],\n              RUNTIME = ONNX) WITH ([GrAppv] [real])\n\nEND\nGO\n\nexec sbaprocess",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"poolName": "srgosqlpoolsyn",
+				"databaseName": "srgosqlpoolsyn"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

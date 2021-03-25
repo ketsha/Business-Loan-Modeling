@@ -77,37 +77,6 @@
 						"type": "DatasetReference"
 					}
 				]
-			},
-			{
-				"name": "Call Azure ML pipelines",
-				"type": "AzureMLExecutePipeline",
-				"dependsOn": [
-					{
-						"activity": "Clean Loan Raw data",
-						"dependencyConditions": [
-							"Succeeded"
-						]
-					}
-				],
-				"policy": {
-					"timeout": "7.00:00:00",
-					"retry": 0,
-					"retryIntervalInSeconds": 30,
-					"secureOutput": false,
-					"secureInput": false
-				},
-				"userProperties": [],
-				"typeProperties": {
-					"experimentName": "experimentName",
-					"mlPipelineParameters": {
-						"mlParameterName": "mlParameterValue"
-					},
-					"mlPipelineId": "2805da30-d811-4009-bfef-2fcdc2bff449"
-				},
-				"linkedServiceName": {
-					"referenceName": "AzureML_LS",
-					"type": "LinkedServiceReference"
-				}
 			}
 		],
 		"annotations": [],

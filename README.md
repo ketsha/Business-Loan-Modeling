@@ -128,10 +128,7 @@ You can create a view on top of this query and any client which can talk to SQL 
 
 During Stage 1, we could have also deployed a Real time Inference pipeline which would deploy the API to an existing Kubernetes clusters. Any application can pass parameters to this API with different values and in turn get a response with the Scored label value. This is ideal for interactive applications when a decision needs to be taken immediately. 
 
-# Videos
-<video width="320" height="240" controls>
-  <source src="https://github.com/ketsha/Business-Loan-Modeling/tree/main/images/synpase2.mp4" type="video/mp4">
-</video>
+
 
 # Deployment
 

@@ -1,9 +1,9 @@
 {
-	"name": "CopyPipeline_jwv",
+	"name": "Load new scoring data",
 	"properties": {
 		"activities": [
 			{
-				"name": "Copy_jwv",
+				"name": "Load into Synapse Dedicated Pool",
 				"type": "Copy",
 				"dependsOn": [],
 				"policy": {

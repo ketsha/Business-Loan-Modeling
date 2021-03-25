@@ -128,6 +128,8 @@ You can create a view on top of this query and any client which can talk to SQL 
 
 During Stage 1, we could have also deployed a Real time Inference pipeline which would deploy the API to an existing Kubernetes clusters. Any application can pass parameters to this API with different values and in turn get a response with the Scored label value. This is ideal for interactive applications when a decision needs to be taken immediately. 
 
+# Video series
+![Video 2](https://user-images.githubusercontent.com/22504173/112519862-29615e80-8d71-11eb-83ef-b7082a0dc687.mp4) 
 
 
 # Deployment

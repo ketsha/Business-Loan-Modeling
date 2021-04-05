@@ -142,14 +142,7 @@ During Stage 1, we could have also deployed a Real time Inference pipeline which
 
 ![Deploy a model in Synapse Spark using Azure ML - Automated ML](https://user-images.githubusercontent.com/22504173/112752387-cc4bef80-8fa0-11eb-8f52-294e76ccf4be.mp4) 
 
-![Load and Score data in Synapse Dedicated SQL pools](https://user-images.githubusercontent.com/22504173/112752381-c81fd200-8fa0-11eb-879c-3ec99e6cb1fd.mp4) 
-
-
-
-https://user-images.githubusercontent.com/22504173/113534365-898ca780-959e-11eb-9b50-e631428c9536.mp4
-
-
-
+![Load and Score data in Synapse Dedicated SQL pools](https://user-images.githubusercontent.com/22504173/112752381-c81fd200-8fa0-11eb-879c-3ec99e6cb1fd.mp4)
 
 # Deployment
 

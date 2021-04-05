@@ -1,3 +1,6 @@
+
+https://user-images.githubusercontent.com/22504173/113534348-7679d780-959e-11eb-8d4e-cb415d72c09b.mp4
+
 # Business Loan Modeling
 # Business Objective
   The objective of the Business Loan Modeling project is to predict how much loan will be approved by the SBA & their registered lenders when a business applies for a loan through the SBA. 
@@ -140,6 +143,14 @@ During Stage 1, we could have also deployed a Real time Inference pipeline which
 ![Deploy a model in Synapse Spark using Azure ML - Automated ML](https://user-images.githubusercontent.com/22504173/112752387-cc4bef80-8fa0-11eb-8f52-294e76ccf4be.mp4) 
 
 ![Load and Score data in Synapse Dedicated SQL pools](https://user-images.githubusercontent.com/22504173/112752381-c81fd200-8fa0-11eb-879c-3ec99e6cb1fd.mp4) 
+
+
+
+https://user-images.githubusercontent.com/22504173/113534365-898ca780-959e-11eb-9b50-e631428c9536.mp4
+
+
+
+
 # Deployment
 
 [![Deploy To Azure](https://raw.githubusercontent.com/Azure/azure-quickstart-templates/master/1-CONTRIBUTION-GUIDE/images/deploytoazure.svg?sanitize=true)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fketsha%2FBusiness-Loan-Modeling%2Fworkspace_publish%2Fsrgosynapseunnmgd%2FTemplateForWorkspace.json)

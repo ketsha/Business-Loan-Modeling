@@ -1,5 +1,4 @@
 
-https://user-images.githubusercontent.com/22504173/113534348-7679d780-959e-11eb-8d4e-cb415d72c09b.mp4
 
 # Business Loan Modeling
 # Business Objective
@@ -132,6 +131,9 @@ You can create a view on top of this query and any client which can talk to SQL 
 During Stage 1, we could have also deployed a Real time Inference pipeline which would deploy the API to an existing Kubernetes clusters. Any application can pass parameters to this API with different values and in turn get a response with the Scored label value. This is ideal for interactive applications when a decision needs to be taken immediately. 
 
 # Video series
+
+https://user-images.githubusercontent.com/22504173/113534348-7679d780-959e-11eb-8d4e-cb415d72c09b.mp4
+
 ![Introduce Synapse workspace and provisioned resources](https://user-images.githubusercontent.com/22504173/112752400-d66dee00-8fa0-11eb-83e6-b1279449e9ba.mp4) 
 
 ![Raw Data ingestion - Synapse Pipelines](https://user-images.githubusercontent.com/22504173/112752398-d40b9400-8fa0-11eb-8680-1a2c1c67fba3.mp4) 

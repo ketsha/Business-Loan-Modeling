@@ -132,7 +132,7 @@ During Stage 1, we could have also deployed a Real time Inference pipeline which
 
 # Video series
 
-![Business Objective](https://github.com/ketsha/Business-Loan-Modeling/blob/main/video/BusinessObjective.mp4)
+![Business Objective](https://github.com/ketsha/Business-Loan-Modeling/blob/main/video/objective.mp4)
 
 https://user-images.githubusercontent.com/22504173/113534348-7679d780-959e-11eb-8d4e-cb415d72c09b.mp4
 

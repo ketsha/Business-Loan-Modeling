@@ -8,6 +8,9 @@
 		"AzureML_LS_servicePrincipalKey": {
 			"value": ""
 		},
+		"CosmosDb1_connectionString": {
+			"value": ""
+		},
 		"LS_Blobstorage_connectionString": {
 			"value": ""
 		},

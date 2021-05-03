@@ -11,6 +11,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'servicePrincipalKey' of 'AzureML_LS'"
 		},
+		"CosmosDb1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'CosmosDb1'"
+		},
 		"LS_Blobstorage_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_Blobstorage'"
@@ -156,7 +160,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/dataflows/Clean Loan Raw data')]",
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
 				"[concat(variables('workspaceId'), '/datasets/DS_Binarysourcerawdata')]",
 				"[concat(variables('workspaceId'), '/datasets/DS_BinaryRaw')]"
 			]
@@ -1346,6 +1349,25 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/CosmosDb1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "CosmosDb",
+				"typeProperties": {
+					"connectionString": "[parameters('CosmosDb1_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/LS_Blobstorage')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -1559,6 +1581,46 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Query Curated SBA Data')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT TOP (100) [LoanNr_ChkDgt]\n,[Name]\n,[City]\n,[State]\n,[Zip]\n,[Bank]\n,[BankState]\n,[NAICS]\n,[ApprovalDate]\n,[ApprovalFY]\n,[Term]\n,[NoEmp]\n,[NewExist]\n,[CreateJob]\n,[RetainedJob]\n,[FranchiseCode]\n,[UrbanRural]\n,[RevLineCr]\n,[LowDoc]\n,[DisbursementDate]\n,[DisbursementGross]\n,[BalanceGross]\n,[MIS_Status]\n,[ChgOffPrinGr]\n,[GrAppv]\n,[SBA_Appv]\n FROM [dbo].[SBACurated2]\n\n\n ALTER TABLE SBACurated2 DROP COLUMN GrAppv",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "srgosqlpoolsyn",
+						"databaseName": "srgosqlpoolsyn"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Reading JSON data from Fluentbit')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "\nSELECT  *\n , JSON_VALUE (jsonContent, '$.log') AS Log_entry\n\nFROM \n\n    OPENROWSET( \n        BULK 'https://srgostorgen2hier.dfs.core.windows.net/fluentbit/fluent-bit-bbd2c_logging_fluent-bit-500c20d544c1fe5d6e31a0d3a019da816c1e61f3eb4ce4c3116ceb9899a0c817/2021/4/28/16/3/19.log', \n        FORMAT = 'CSV', \n        FIELDQUOTE = '0x0b', \n        FIELDTERMINATOR ='0x0b' \n    ) \n    WITH ( \n        jsonContent varchar(8000) \n    ) AS [result] \n\n ",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "Built-in",
+						"databaseName": "master"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/SQL script 2')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
@@ -1597,26 +1659,6 @@
 			"dependsOn": []
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Query Curated SBA Data')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"query": "SELECT TOP (100) [LoanNr_ChkDgt]\n,[Name]\n,[City]\n,[State]\n,[Zip]\n,[Bank]\n,[BankState]\n,[NAICS]\n,[ApprovalDate]\n,[ApprovalFY]\n,[Term]\n,[NoEmp]\n,[NewExist]\n,[CreateJob]\n,[RetainedJob]\n,[FranchiseCode]\n,[UrbanRural]\n,[RevLineCr]\n,[LowDoc]\n,[DisbursementDate]\n,[DisbursementGross]\n,[BalanceGross]\n,[MIS_Status]\n,[ChgOffPrinGr]\n,[GrAppv]\n,[SBA_Appv]\n FROM [dbo].[SBACurated2]\n\n\n ALTER TABLE SBACurated2 DROP COLUMN GrAppv",
-					"metadata": {
-						"language": "sql"
-					},
-					"currentConnection": {
-						"poolName": "srgosqlpoolsyn",
-						"databaseName": "srgosqlpoolsyn"
-					},
-					"resultLimit": 5000
-				},
-				"type": "SqlQuery"
-			},
-			"dependsOn": []
-		},
-		{
 			"name": "[concat(parameters('workspaceName'), '/AutoML Model Deploy')]",
 			"type": "Microsoft.Synapse/workspaces/notebooks",
 			"apiVersion": "2019-06-01-preview",
@@ -1641,6 +1683,9 @@
 				},
 				"metadata": {
 					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1"
+					},
 					"kernelspec": {
 						"name": "synapse_pyspark",
 						"display_name": "Synapse PySpark"
@@ -1660,15 +1705,12 @@
 						"sparkVersion": "2.4",
 						"nodeCount": 10,
 						"cores": 16,
-						"memory": 112,
-						"automaticScaleJobs": false
-					},
-					"sessionKeepAliveTimeout": 30
+						"memory": 112
+					}
 				},
 				"cells": [
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"import azureml.core\n",
 							"\n",
@@ -1681,7 +1723,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"subscription_id = \"6f931dc1-9715-4a59-a849-0c049740fa0f\"\n",
 							"resource_group = \"Chubb\"\n",
@@ -1696,7 +1737,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"df = spark.sql(\"SELECT * FROM default.sbacurated LIMIT 6000\")\n",
 							"\n",
@@ -1708,7 +1748,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"automl_config = AutoMLConfig(spark_context = sc,\n",
 							"                             task = \"regression\",\n",
@@ -1724,7 +1763,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"run = experiment.submit(automl_config)"
 						],
@@ -1733,7 +1771,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"displayHTML(\"<a href={} target='_blank'>Your experiment in Azure Machine Learning portal: {}</a>\".format(run.get_portal_url(), run.id))"
 						],
@@ -1742,7 +1779,6 @@
 					},
 					{
 						"cell_type": "code",
-						"metadata": {},
 						"source": [
 							"run.wait_for_completion()\n",
 							"\n",

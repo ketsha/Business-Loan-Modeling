@@ -17,6 +17,9 @@
 		"LS_SBASourceRawdata_connectionString": {
 			"value": ""
 		},
+		"RetailSalesDemoDB_connectionString": {
+			"value": ""
+		},
 		"linkedService1_connectionString": {
 			"value": ""
 		},

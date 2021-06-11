@@ -23,6 +23,10 @@
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'LS_SBASourceRawdata'"
 		},
+		"RetailSalesDemoDB_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'RetailSalesDemoDB'"
+		},
 		"linkedService1_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'linkedService1'"
@@ -1406,6 +1410,25 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/RetailSalesDemoDB')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "CosmosDb",
+				"typeProperties": {
+					"connectionString": "[parameters('RetailSalesDemoDB_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/linkedService1')]",
 			"type": "Microsoft.Synapse/workspaces/linkedServices",
 			"apiVersion": "2019-06-01-preview",
@@ -1542,7 +1565,7 @@
 							"name": "RemoveUnnecessaryColumns"
 						}
 					],
-					"script": "source(output(\n\t\tLoanNr_ChkDgt as integer '000',\n\t\tName as string,\n\t\tCity as string,\n\t\tState as string,\n\t\tZip as integer '000',\n\t\tBank as string,\n\t\tBankState as string,\n\t\tNAICS as integer,\n\t\tApprovalDate as string,\n\t\tApprovalFY as short,\n\t\tTerm as short,\n\t\tNoEmp as short,\n\t\tNewExist as short,\n\t\tCreateJob as short,\n\t\tRetainedJob as short,\n\t\tFranchiseCode as integer,\n\t\tUrbanRural as short,\n\t\tRevLineCr as boolean,\n\t\tLowDoc as boolean,\n\t\tChgOffDate as string,\n\t\tDisbursementDate as string,\n\t\tDisbursementGross as integer '$###,###',\n\t\tBalanceGross as integer '$###,###',\n\t\tMIS_Status as string,\n\t\tChgOffPrinGr as integer '$###,###',\n\t\tGrAppv as integer '$###,###',\n\t\tSBA_Appv as integer '$###,###'\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> PullSourceData\nPullSourceData derive(LoanNr_ChkDgt = toInteger(LoanNr_ChkDgt),\n\t\tZip = toInteger(Zip),\n\t\tNAICS = toInteger(NAICS),\n\t\tTerm = toInteger(Term),\n\t\tNoEmp = toInteger(NoEmp),\n\t\tCreateJob = toInteger(CreateJob),\n\t\tRetainedJob = toInteger(RetainedJob),\n\t\tFranchiseCode = toInteger(FranchiseCode),\n\t\tUrbanRural = toInteger(UrbanRural),\n\t\tNewExist = toInteger(case(NewExist == 1 ,0 , NewExist ==2, 1)),\n\t\tMIS_Status = toInteger(case(MIS_Status =='P I F', '1', MIS_Status =='CHGOFF', '0')),\n\t\tApprovalFY = toInteger(ApprovalFY)) ~> DerivedColumn1\nDerivedColumn1 select(mapColumn(\n\t\tLoanNr_ChkDgt,\n\t\tName,\n\t\tCity,\n\t\tState,\n\t\tZip,\n\t\tBank,\n\t\tBankState,\n\t\tNAICS,\n\t\tApprovalDate,\n\t\tApprovalFY,\n\t\tTerm,\n\t\tNoEmp,\n\t\tNewExist,\n\t\tCreateJob,\n\t\tRetainedJob,\n\t\tFranchiseCode,\n\t\tUrbanRural,\n\t\tRevLineCr,\n\t\tLowDoc,\n\t\tDisbursementDate,\n\t\tDisbursementGross,\n\t\tBalanceGross,\n\t\tMIS_Status,\n\t\tChgOffPrinGr,\n\t\tGrAppv,\n\t\tSBA_Appv\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveUnnecessaryColumns\nRemoveUnnecessaryColumns sink(input(\n\t\tColumn_1 as string,\n\t\tColumn_2 as string,\n\t\tColumn_3 as string,\n\t\tColumn_4 as string,\n\t\tColumn_5 as string,\n\t\tColumn_6 as string,\n\t\tColumn_7 as string,\n\t\tColumn_8 as string,\n\t\tColumn_9 as string,\n\t\tColumn_10 as string,\n\t\tColumn_11 as string,\n\t\tColumn_12 as string,\n\t\tColumn_13 as string,\n\t\tColumn_14 as string,\n\t\tColumn_15 as string,\n\t\tColumn_16 as string,\n\t\tColumn_17 as string,\n\t\tColumn_18 as string,\n\t\tColumn_19 as string,\n\t\tColumn_20 as string,\n\t\tColumn_21 as string,\n\t\tColumn_22 as string,\n\t\tColumn_23 as string,\n\t\tColumn_24 as string,\n\t\tColumn_25 as string,\n\t\tColumn_26 as string,\n\t\tColumn_27 as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\ttruncate: true,\n\tpartitionBy('hash', 1),\n\tsaveOrder: 1) ~> Curateddata"
+					"script": "source(output(\n\t\tLoanNr_ChkDgt as integer '000',\n\t\tName as string,\n\t\tCity as string,\n\t\tState as string,\n\t\tZip as integer '000',\n\t\tBank as string,\n\t\tBankState as string,\n\t\tNAICS as integer,\n\t\tApprovalDate as string,\n\t\tApprovalFY as short,\n\t\tTerm as short,\n\t\tNoEmp as short,\n\t\tNewExist as short,\n\t\tCreateJob as short,\n\t\tRetainedJob as short,\n\t\tFranchiseCode as integer,\n\t\tUrbanRural as short,\n\t\tRevLineCr as boolean,\n\t\tLowDoc as boolean,\n\t\tChgOffDate as string,\n\t\tDisbursementDate as string,\n\t\tDisbursementGross as integer '$###,###',\n\t\tBalanceGross as integer '$###,###',\n\t\tMIS_Status as string,\n\t\tChgOffPrinGr as integer '$###,###',\n\t\tGrAppv as integer '$###,###',\n\t\tSBA_Appv as integer '$###,###'\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> PullSourceData\nPullSourceData derive(LoanNr_ChkDgt = toInteger(LoanNr_ChkDgt),\n\t\tZip = toInteger(Zip),\n\t\tNAICS = toInteger(NAICS),\n\t\tTerm = toInteger(Term),\n\t\tNoEmp = toInteger(NoEmp),\n\t\tCreateJob = toInteger(CreateJob),\n\t\tRetainedJob = toInteger(RetainedJob),\n\t\tFranchiseCode = toInteger(FranchiseCode),\n\t\tUrbanRural = toInteger(UrbanRural),\n\t\tNewExist = toInteger(case(NewExist == 1 ,0 , NewExist ==2, 1)),\n\t\tMIS_Status = toInteger(case(MIS_Status =='P I F', '1', MIS_Status =='CHGOFF', '0')),\n\t\tApprovalFY = toInteger(ApprovalFY)) ~> DerivedColumn1\nDerivedColumn1 select(mapColumn(\n\t\tLoanNr_ChkDgt,\n\t\tName,\n\t\tCity,\n\t\tState,\n\t\tZip,\n\t\tBank,\n\t\tBankState,\n\t\tNAICS,\n\t\tApprovalDate,\n\t\tApprovalFY,\n\t\tTerm,\n\t\tNoEmp,\n\t\tNewExist,\n\t\tCreateJob,\n\t\tRetainedJob,\n\t\tFranchiseCode,\n\t\tUrbanRural,\n\t\tRevLineCr,\n\t\tLowDoc,\n\t\tDisbursementDate,\n\t\tDisbursementGross,\n\t\tBalanceGross,\n\t\tMIS_Status,\n\t\tChgOffPrinGr,\n\t\tGrAppv,\n\t\tSBA_Appv\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveUnnecessaryColumns\nRemoveUnnecessaryColumns sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\tinput(\n\t\tColumn_1 as string,\n\t\tColumn_2 as string,\n\t\tColumn_3 as string,\n\t\tColumn_4 as string,\n\t\tColumn_5 as string,\n\t\tColumn_6 as string,\n\t\tColumn_7 as string,\n\t\tColumn_8 as string,\n\t\tColumn_9 as string,\n\t\tColumn_10 as string,\n\t\tColumn_11 as string,\n\t\tColumn_12 as string,\n\t\tColumn_13 as string,\n\t\tColumn_14 as string,\n\t\tColumn_15 as string,\n\t\tColumn_16 as string,\n\t\tColumn_17 as string,\n\t\tColumn_18 as string,\n\t\tColumn_19 as string,\n\t\tColumn_20 as string,\n\t\tColumn_21 as string,\n\t\tColumn_22 as string,\n\t\tColumn_23 as string,\n\t\tColumn_24 as string,\n\t\tColumn_25 as string,\n\t\tColumn_26 as string,\n\t\tColumn_27 as string\n\t),\n\ttruncate: true,\n\tumask: 0022,\n\tsaveOrder: 1,\n\tpartitionBy('hash', 1)) ~> Curateddata"
 				}
 			},
 			"dependsOn": [
@@ -1557,6 +1580,26 @@
 			"properties": {
 				"type": "ManagedIdentity",
 				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/CNS')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT \n  [PARTICIPANT ID], [MARKET CODE], CUSIP, SUM([PURCHASE AMOUNT]-[SELL AMOUNT]) AS [BUY\\SELL DIRECTION]\nFROM\n    OPENROWSET(\n        BULK 'https://srgostorgen2hier.dfs.core.windows.net/cns/CNSsample.csv',\n        FORMAT = 'CSV',\n        PARSER_VERSION='2.0',\nHEADER_ROW = TRUE\n    ) AS [result]\nWHERE CUSIP IS NOT NULL\nGROUP BY [PARTICIPANT ID], [MARKET CODE], CUSIP \n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "Built-in",
+						"databaseName": "temp"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
 			},
 			"dependsOn": []
 		},
@@ -1673,6 +1716,26 @@
 						"poolName": "Built-in",
 						"databaseName": "master"
 					}
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Synapse link')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "IF (NOT EXISTS(SELECT * FROM sys.credentials WHERE name = 'srgosqlcos2'))\n    THROW 50000, 'As a prerequisite, create a credential with Azure Cosmos DB key in SECRET option:\n    CREATE CREDENTIAL [srgosqlcos2]\n    WITH IDENTITY = ''SHARED ACCESS SIGNATURE'', SECRET = ''HT6FzeeiqxRbMhMmp2NCeOudmJPIB0akIaFpJddTNLFsvlYZNpuPIlL3i603Tcw2ejDhmJoyR5TcHkrE65LzqQ==''', 0\nGO\nCREATE CREDENTIAL [srgosqlcos2] WITH IDENTITY = 'SHARED ACCESS SIGNATURE', SECRET = 'HT6FzeeiqxRbMhMmp2NCeOudmJPIB0akIaFpJddTNLFsvlYZNpuPIlL3i603Tcw2ejDhmJoyR5TcHkrE65LzqQ=='\n\nCREATE VIEW Products\nAS\nSELECT TOP 100 *\nFROM OPENROWSET(​PROVIDER = 'CosmosDB',\n                CONNECTION = 'Account=srgosqlcos;Database=RetailSalesDemoDB',\n                OBJECT = 'Products',\n                SERVER_CREDENTIAL = 'srgosqlcos2'\n) AS [Products]\n\nCREATE VIEW RetailSales\nAS\nSELECT TOP 100 *\nFROM OPENROWSET(​PROVIDER = 'CosmosDB',\n                CONNECTION = 'Account=srgosqlcos;Database=RetailSalesDemoDB',\n                OBJECT = 'RetailSales',\n                SERVER_CREDENTIAL = 'srgosqlcos2'\n) AS [RetailSales]\n\nCREATE VIEW StoreDemoGraphics\nAS\nSELECT TOP 100 *\nFROM OPENROWSET(​PROVIDER = 'CosmosDB',\n                CONNECTION = 'Account=srgosqlcos;Database=RetailSalesDemoDB',\n                OBJECT = 'StoreDemoGraphics',\n                SERVER_CREDENTIAL = 'srgosqlcos2'\n) AS [StoreDemoGraphics]\n\n---- View Joins\n\nselect * \nfrom Retailsales as p inner join StoreDemoGraphics as q\n on q.storeid=p.storeid\n group by p.advertising, p.storeid, p.weekstarting, p.largehh\n\n\n\n\n\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"poolName": "Built-in",
+						"databaseName": "temp"
+					},
+					"resultLimit": 5000
 				},
 				"type": "SqlQuery"
 			},

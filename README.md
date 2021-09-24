@@ -1,6 +1,6 @@
 
 
-# Risk Clasification with Loan Modeling
+# Risk Classification with Loan Modeling
 # Business Objective
   The objective of the Business Loan Modeling project is to predict how much loan will be approved by the SBA & their registered lenders when a business applies for a loan through the SBA. 
   

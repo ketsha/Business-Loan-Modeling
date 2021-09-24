@@ -1,0 +1,57 @@
+{
+	"$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"value": "loandemo"
+		},
+		"AzureMLService1_loantest_servicePrincipalKey": {
+			"value": ""
+		},
+		"HttpServer1_password": {
+			"value": ""
+		},
+		"link_to_sbadata_storage_connectionString": {
+			"value": ""
+		},
+		"loandemo-WorkspaceDefaultSqlServer_connectionString": {
+			"value": ""
+		},
+		"loandemo_datalake_accountKey": {
+			"value": ""
+		},
+		"loanmodelml_connectionString": {
+			"value": ""
+		},
+		"rawdatademo_blob storage_connectionString": {
+			"value": ""
+		},
+		"AzureMLService1_loantest_properties_typeProperties_subscriptionId": {
+			"value": "35e1448d-7744-4a0b-abb8-1d2aae54dc0a"
+		},
+		"AzureMLService1_loantest_properties_typeProperties_resourceGroupName": {
+			"value": "ks-cor-loan-deploy"
+		},
+		"AzureMLService1_loantest_properties_typeProperties_servicePrincipalId": {
+			"value": "70b0f059-16c7-4f36-a7b1-878c50a9f023"
+		},
+		"AzureMLService1_loantest_properties_typeProperties_tenant": {
+			"value": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+		},
+		"HttpServer1_properties_typeProperties_url": {
+			"value": "https://github.com/ketsha/Failure-To-Deliver-and-Settle-Financial-Instruments/blob/main/dataset/2014-First%20Half.zip"
+		},
+		"HttpServer1_properties_typeProperties_userName": {
+			"value": "loancorinna"
+		},
+		"loandemo-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"value": "https://loandemo.dfs.core.windows.net"
+		},
+		"loandemo_datalake_properties_typeProperties_url": {
+			"value": "https://loandemo.dfs.core.windows.net"
+		},
+		"sbaloanauto_properties_typeProperties_scope": {
+			"value": "/subscriptions/35e1448d-7744-4a0b-abb8-1d2aae54dc0a/resourceGroups/ks-cor-loan-deploy/providers/Microsoft.Storage/storageAccounts/sbadata"
+		}
+	}
+}

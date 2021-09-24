@@ -1,0 +1,1984 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "loandemo"
+		},
+		"AzureMLService1_loantest_servicePrincipalKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'servicePrincipalKey' of 'AzureMLService1_loantest'"
+		},
+		"HttpServer1_password": {
+			"type": "secureString",
+			"metadata": "Secure string for 'password' of 'HttpServer1'"
+		},
+		"link_to_sbadata_storage_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'link_to_sbadata_storage'"
+		},
+		"loandemo-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'loandemo-WorkspaceDefaultSqlServer'"
+		},
+		"loandemo_datalake_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'loandemo_datalake'"
+		},
+		"loanmodelml_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'loanmodelml'"
+		},
+		"rawdatademo_blob storage_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'rawdatademo_blob storage'"
+		},
+		"AzureMLService1_loantest_properties_typeProperties_subscriptionId": {
+			"type": "string",
+			"defaultValue": "35e1448d-7744-4a0b-abb8-1d2aae54dc0a"
+		},
+		"AzureMLService1_loantest_properties_typeProperties_resourceGroupName": {
+			"type": "string",
+			"defaultValue": "ks-cor-loan-deploy"
+		},
+		"AzureMLService1_loantest_properties_typeProperties_servicePrincipalId": {
+			"type": "string",
+			"defaultValue": "70b0f059-16c7-4f36-a7b1-878c50a9f023"
+		},
+		"AzureMLService1_loantest_properties_typeProperties_tenant": {
+			"type": "string",
+			"defaultValue": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+		},
+		"HttpServer1_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://github.com/ketsha/Failure-To-Deliver-and-Settle-Financial-Instruments/blob/main/dataset/2014-First%20Half.zip"
+		},
+		"HttpServer1_properties_typeProperties_userName": {
+			"type": "string",
+			"defaultValue": "loancorinna"
+		},
+		"loandemo-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://loandemo.dfs.core.windows.net"
+		},
+		"loandemo_datalake_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://loandemo.dfs.core.windows.net"
+		},
+		"sbaloanauto_properties_typeProperties_scope": {
+			"type": "string",
+			"defaultValue": "/subscriptions/35e1448d-7744-4a0b-abb8-1d2aae54dc0a/resourceGroups/ks-cor-loan-deploy/providers/Microsoft.Storage/storageAccounts/sbadata"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/Clean Raw Data')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Ingest SBA data",
+						"description": "Ingest SBA data",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "BinarySource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"deleteFilesAfterCompletion": false
+								},
+								"formatSettings": {
+									"type": "BinaryReadSettings"
+								}
+							},
+							"sink": {
+								"type": "BinarySink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "SBA_raw_data",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "sba_input_data",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "Clean Loan Raw data",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Ingest SBA data",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Clean Loan Raw data",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"PullSourceData": {},
+									"NAICS01": {},
+									"Curateddata": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-08-06T03:39:34Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/SBA_raw_data')]",
+				"[concat(variables('workspaceId'), '/datasets/sba_input_data')]",
+				"[concat(variables('workspaceId'), '/dataflows/Clean Loan Raw data')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Ingest_test_file')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Ingest test file",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [
+							{
+								"name": "Source",
+								"value": "testinput//"
+							},
+							{
+								"name": "Destination",
+								"value": "testoutput//testresult"
+							}
+						],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"wildcardFileName": "*",
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings",
+									"skipLineCount": 0
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"validateDataConsistency": false
+						},
+						"inputs": [
+							{
+								"referenceName": "SourceDataset_bhv",
+								"type": "DatasetReference",
+								"parameters": {
+									"input file name": "test*.csv"
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DestinationDataset_bhv",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
+					},
+					{
+						"name": "ML_loan_risk",
+						"type": "AzureMLExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Ingest test file",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"mlPipelineEndpointId": "a408d466-9b64-4e66-8fc6-2cef71fde67d"
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureMLService1_loantest",
+							"type": "LinkedServiceReference"
+						}
+					},
+					{
+						"name": "ML_SBAloan_amount",
+						"type": "AzureMLExecutePipeline",
+						"dependsOn": [
+							{
+								"activity": "Ingest test file",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"mlPipelineEndpointId": "ec2de105-109a-4887-9a1f-b0d0fe52c3ff"
+						},
+						"linkedServiceName": {
+							"referenceName": "AzureMLService1_loantest",
+							"type": "LinkedServiceReference"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2021-08-11T04:22:37Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/SourceDataset_bhv')]",
+				"[concat(variables('workspaceId'), '/datasets/DestinationDataset_bhv')]",
+				"[concat(variables('workspaceId'), '/linkedServices/AzureMLService1_loantest')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DelimitedText1')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "test"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DelimitedText2')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "SBAnational2.csv",
+						"container": "input"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "LoanNr_ChkDgt",
+						"type": "String"
+					},
+					{
+						"name": "Name",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "Zip",
+						"type": "String"
+					},
+					{
+						"name": "Bank",
+						"type": "String"
+					},
+					{
+						"name": "BankState",
+						"type": "String"
+					},
+					{
+						"name": "NAICS",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalDate",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalFY",
+						"type": "String"
+					},
+					{
+						"name": "Term",
+						"type": "String"
+					},
+					{
+						"name": "NoEmp",
+						"type": "String"
+					},
+					{
+						"name": "NewExist",
+						"type": "String"
+					},
+					{
+						"name": "CreateJob",
+						"type": "String"
+					},
+					{
+						"name": "RetainedJob",
+						"type": "String"
+					},
+					{
+						"name": "FranchiseCode",
+						"type": "String"
+					},
+					{
+						"name": "UrbanRural",
+						"type": "String"
+					},
+					{
+						"name": "RevLineCr",
+						"type": "String"
+					},
+					{
+						"name": "LowDoc",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementGross",
+						"type": "String"
+					},
+					{
+						"name": "BalanceGross",
+						"type": "String"
+					},
+					{
+						"name": "MIS_Status",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffPrinGr",
+						"type": "String"
+					},
+					{
+						"name": "GrAppv",
+						"type": "String"
+					},
+					{
+						"name": "SBA_Appv",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DestinationDataset_bhv')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "testoutput"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DestinationDataset_eku')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "loanmodelml",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "sbadata"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/loanmodelml')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DestinationDataset_y9s')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "testoutput"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/LoanCuratedData')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "output"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/LoanRawdata')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "loandemo_datalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "input_data",
+						"fileSystem": "loanfilecontainer"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "LoanNr_ChkDgt",
+						"type": "String"
+					},
+					{
+						"name": "Name",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "Zip",
+						"type": "String"
+					},
+					{
+						"name": "Bank",
+						"type": "String"
+					},
+					{
+						"name": "BankState",
+						"type": "String"
+					},
+					{
+						"name": "NAICS",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalDate",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalFY",
+						"type": "String"
+					},
+					{
+						"name": "Term",
+						"type": "String"
+					},
+					{
+						"name": "NoEmp",
+						"type": "String"
+					},
+					{
+						"name": "NewExist",
+						"type": "String"
+					},
+					{
+						"name": "CreateJob",
+						"type": "String"
+					},
+					{
+						"name": "RetainedJob",
+						"type": "String"
+					},
+					{
+						"name": "FranchiseCode",
+						"type": "String"
+					},
+					{
+						"name": "UrbanRural",
+						"type": "String"
+					},
+					{
+						"name": "RevLineCr",
+						"type": "String"
+					},
+					{
+						"name": "LowDoc",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementGross",
+						"type": "String"
+					},
+					{
+						"name": "BalanceGross",
+						"type": "String"
+					},
+					{
+						"name": "MIS_Status",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffPrinGr",
+						"type": "String"
+					},
+					{
+						"name": "GrAppv",
+						"type": "String"
+					},
+					{
+						"name": "SBA_Appv",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/loandemo_datalake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/NAICS')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "NAICS.csv",
+						"container": "input"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "DigitCode",
+						"type": "String"
+					},
+					{
+						"name": "Industry",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SBA_data_analysis')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "loandemo_datalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Parquet",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "data_for_analysis",
+						"fileSystem": "loanfilecontainer"
+					},
+					"compressionCodec": "snappy"
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/loandemo_datalake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SBA_raw_data')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "SBAnational2.csv",
+						"container": "input"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SourceDataset_bhv')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"input file name": {
+						"type": "string",
+						"defaultValue": "test*.csv"
+					}
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "testinput"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "LoanNr_ChkDgt",
+						"type": "String"
+					},
+					{
+						"name": "Name",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "Zip",
+						"type": "String"
+					},
+					{
+						"name": "Bank",
+						"type": "String"
+					},
+					{
+						"name": "BankState",
+						"type": "String"
+					},
+					{
+						"name": "NAICS",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalDate",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalFY",
+						"type": "String"
+					},
+					{
+						"name": "Term",
+						"type": "String"
+					},
+					{
+						"name": "NoEmp",
+						"type": "String"
+					},
+					{
+						"name": "NewExist",
+						"type": "String"
+					},
+					{
+						"name": "CreateJob",
+						"type": "String"
+					},
+					{
+						"name": "RetainedJob",
+						"type": "String"
+					},
+					{
+						"name": "FranchiseCode",
+						"type": "String"
+					},
+					{
+						"name": "UrbanRural",
+						"type": "String"
+					},
+					{
+						"name": "RevLineCr",
+						"type": "String"
+					},
+					{
+						"name": "LowDoc",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementGross",
+						"type": "String"
+					},
+					{
+						"name": "BalanceGross",
+						"type": "String"
+					},
+					{
+						"name": "MIS_Status",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffPrinGr",
+						"type": "String"
+					},
+					{
+						"name": "GrAppv",
+						"type": "String"
+					},
+					{
+						"name": "SBA_Appv",
+						"type": "String"
+					},
+					{
+						"name": "IndustryCode",
+						"type": "String"
+					},
+					{
+						"name": "Risk",
+						"type": "String"
+					},
+					{
+						"name": "Industry",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SourceDataset_eku')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "loandemo_datalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "data_for_analysis",
+						"fileSystem": "loanfilecontainer"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "LoanNr_ChkDgt",
+						"type": "String"
+					},
+					{
+						"name": "Name",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "Zip",
+						"type": "String"
+					},
+					{
+						"name": "Bank",
+						"type": "String"
+					},
+					{
+						"name": "BankState",
+						"type": "String"
+					},
+					{
+						"name": "NAICS",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalDate",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalFY",
+						"type": "String"
+					},
+					{
+						"name": "Term",
+						"type": "String"
+					},
+					{
+						"name": "NoEmp",
+						"type": "String"
+					},
+					{
+						"name": "NewExist",
+						"type": "String"
+					},
+					{
+						"name": "CreateJob",
+						"type": "String"
+					},
+					{
+						"name": "RetainedJob",
+						"type": "String"
+					},
+					{
+						"name": "FranchiseCode",
+						"type": "String"
+					},
+					{
+						"name": "UrbanRural",
+						"type": "String"
+					},
+					{
+						"name": "RevLineCr",
+						"type": "String"
+					},
+					{
+						"name": "LowDoc",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementGross",
+						"type": "String"
+					},
+					{
+						"name": "BalanceGross",
+						"type": "String"
+					},
+					{
+						"name": "MIS_Status",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffPrinGr",
+						"type": "String"
+					},
+					{
+						"name": "GrAppv",
+						"type": "String"
+					},
+					{
+						"name": "SBA_Appv",
+						"type": "String"
+					},
+					{
+						"name": "RealEstate",
+						"type": "String"
+					},
+					{
+						"name": "NewBusiness",
+						"type": "String"
+					},
+					{
+						"name": "Risk",
+						"type": "String"
+					},
+					{
+						"name": "IndustryCode",
+						"type": "String"
+					},
+					{
+						"name": "DigitCode",
+						"type": "String"
+					},
+					{
+						"name": "Industry",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/loandemo_datalake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SourceDataset_y9s')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "testinput"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "LoanNr_ChkDgt",
+						"type": "String"
+					},
+					{
+						"name": "Name",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "Zip",
+						"type": "String"
+					},
+					{
+						"name": "Bank",
+						"type": "String"
+					},
+					{
+						"name": "BankState",
+						"type": "String"
+					},
+					{
+						"name": "NAICS",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalDate",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalFY",
+						"type": "String"
+					},
+					{
+						"name": "Term",
+						"type": "String"
+					},
+					{
+						"name": "NoEmp",
+						"type": "String"
+					},
+					{
+						"name": "NewExist",
+						"type": "String"
+					},
+					{
+						"name": "CreateJob",
+						"type": "String"
+					},
+					{
+						"name": "RetainedJob",
+						"type": "String"
+					},
+					{
+						"name": "FranchiseCode",
+						"type": "String"
+					},
+					{
+						"name": "UrbanRural",
+						"type": "String"
+					},
+					{
+						"name": "RevLineCr",
+						"type": "String"
+					},
+					{
+						"name": "LowDoc",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementGross",
+						"type": "String"
+					},
+					{
+						"name": "BalanceGross",
+						"type": "String"
+					},
+					{
+						"name": "MIS_Status",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffPrinGr",
+						"type": "String"
+					},
+					{
+						"name": "GrAppv",
+						"type": "String"
+					},
+					{
+						"name": "SBA_Appv",
+						"type": "String"
+					},
+					{
+						"name": "IndustryCode",
+						"type": "String"
+					},
+					{
+						"name": "Risk",
+						"type": "String"
+					},
+					{
+						"name": "Industry",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/loantestinput')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "testdata01.csv",
+						"container": "testinput"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "LoanNr_ChkDgt",
+						"type": "String"
+					},
+					{
+						"name": "Name",
+						"type": "String"
+					},
+					{
+						"name": "City",
+						"type": "String"
+					},
+					{
+						"name": "State",
+						"type": "String"
+					},
+					{
+						"name": "Zip",
+						"type": "String"
+					},
+					{
+						"name": "Bank",
+						"type": "String"
+					},
+					{
+						"name": "BankState",
+						"type": "String"
+					},
+					{
+						"name": "NAICS",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalDate",
+						"type": "String"
+					},
+					{
+						"name": "ApprovalFY",
+						"type": "String"
+					},
+					{
+						"name": "Term",
+						"type": "String"
+					},
+					{
+						"name": "NoEmp",
+						"type": "String"
+					},
+					{
+						"name": "NewExist",
+						"type": "String"
+					},
+					{
+						"name": "CreateJob",
+						"type": "String"
+					},
+					{
+						"name": "RetainedJob",
+						"type": "String"
+					},
+					{
+						"name": "FranchiseCode",
+						"type": "String"
+					},
+					{
+						"name": "UrbanRural",
+						"type": "String"
+					},
+					{
+						"name": "RevLineCr",
+						"type": "String"
+					},
+					{
+						"name": "LowDoc",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementDate",
+						"type": "String"
+					},
+					{
+						"name": "DisbursementGross",
+						"type": "String"
+					},
+					{
+						"name": "BalanceGross",
+						"type": "String"
+					},
+					{
+						"name": "MIS_Status",
+						"type": "String"
+					},
+					{
+						"name": "ChgOffPrinGr",
+						"type": "String"
+					},
+					{
+						"name": "GrAppv",
+						"type": "String"
+					},
+					{
+						"name": "SBA_Appv",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/loantestoutput')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "link_to_sbadata_storage",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"container": "testoutput"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/link_to_sbadata_storage')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/sba_input_data')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "loandemo_datalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "input_data",
+						"fileSystem": "loanfilecontainer"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/loandemo_datalake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureMLService1_loantest')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureMLService",
+				"typeProperties": {
+					"subscriptionId": "[parameters('AzureMLService1_loantest_properties_typeProperties_subscriptionId')]",
+					"resourceGroupName": "[parameters('AzureMLService1_loantest_properties_typeProperties_resourceGroupName')]",
+					"mlWorkspaceName": "loandemoML",
+					"servicePrincipalId": "[parameters('AzureMLService1_loantest_properties_typeProperties_servicePrincipalId')]",
+					"servicePrincipalKey": {
+						"type": "SecureString",
+						"value": "[parameters('AzureMLService1_loantest_servicePrincipalKey')]"
+					},
+					"tenant": "[parameters('AzureMLService1_loantest_properties_typeProperties_tenant')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/HttpServer1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "HttpServer",
+				"typeProperties": {
+					"url": "[parameters('HttpServer1_properties_typeProperties_url')]",
+					"enableServerCertificateValidation": true,
+					"authenticationType": "Basic",
+					"userName": "[parameters('HttpServer1_properties_typeProperties_userName')]",
+					"password": {
+						"type": "SecureString",
+						"value": "[parameters('HttpServer1_password')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/link_to_sbadata_storage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('link_to_sbadata_storage_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/loandemo-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('loandemo-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/loandemo-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('loandemo-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/loandemo_datalake')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('loandemo_datalake_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('loandemo_datalake_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/loanmodelml')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('loanmodelml_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/rawdatademo_blob storage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('rawdatademo_blob storage_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/sbaloanauto')]",
+			"type": "Microsoft.Synapse/workspaces/triggers",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"runtimeState": "Started",
+				"pipelines": [
+					{
+						"pipelineReference": {
+							"referenceName": "Ingest_test_file",
+							"type": "PipelineReference"
+						},
+						"parameters": {}
+					}
+				],
+				"type": "BlobEventsTrigger",
+				"typeProperties": {
+					"blobPathBeginsWith": "/testinput/blobs/",
+					"ignoreEmptyBlobs": true,
+					"scope": "[parameters('sbaloanauto_properties_typeProperties_scope')]",
+					"events": [
+						"Microsoft.Storage.BlobCreated"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/pipelines/Ingest_test_file')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Clean Loan Raw data')]",
+			"type": "Microsoft.Synapse/workspaces/dataflows",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "LoanRawdata",
+								"type": "DatasetReference"
+							},
+							"name": "PullSourceData"
+						},
+						{
+							"dataset": {
+								"referenceName": "NAICS",
+								"type": "DatasetReference"
+							},
+							"name": "NAICS01"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "LoanCuratedData",
+								"type": "DatasetReference"
+							},
+							"name": "Curateddata"
+						}
+					],
+					"transformations": [
+						{
+							"name": "DerivedColumn1"
+						},
+						{
+							"name": "Join1"
+						},
+						{
+							"name": "RemoveUnnecessaryColumns"
+						}
+					],
+					"script": "source(output(\n\t\tLoanNr_ChkDgt as string,\n\t\tName as string,\n\t\tCity as string,\n\t\tState as string,\n\t\tZip as string,\n\t\tBank as string,\n\t\tBankState as string,\n\t\tNAICS as integer,\n\t\tApprovalDate as string,\n\t\tApprovalFY as integer,\n\t\tTerm as integer,\n\t\tNoEmp as integer,\n\t\tNewExist as string,\n\t\tCreateJob as integer,\n\t\tRetainedJob as integer,\n\t\tFranchiseCode as string,\n\t\tUrbanRural as string,\n\t\tRevLineCr as boolean,\n\t\tLowDoc as boolean,\n\t\tChgOffDate as string,\n\t\tDisbursementDate as string,\n\t\tDisbursementGross as integer '$###,###',\n\t\tBalanceGross as integer '$###,###',\n\t\tMIS_Status as string,\n\t\tChgOffPrinGr as integer '$###,###',\n\t\tGrAppv as integer '$###,###',\n\t\tSBA_Appv as integer '$###,###'\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> PullSourceData\nsource(output(\n\t\tDigitCode as integer,\n\t\tIndustry as string\n\t),\n\tallowSchemaDrift: true,\n\tvalidateSchema: false,\n\tignoreNoFilesFound: false) ~> NAICS01\nPullSourceData derive(IndustryCode = toInteger(NAICS/10000),\n\t\tRisk = toString(case(MIS_Status =='P I F', 'low', MIS_Status =='CHGOFF', 'high'))) ~> DerivedColumn1\nDerivedColumn1, NAICS01 join(IndustryCode == DigitCode,\n\tjoinType:'left',\n\tbroadcast: 'auto')~> Join1\nJoin1 select(mapColumn(\n\t\tLoanNr_ChkDgt,\n\t\tName,\n\t\tCity,\n\t\tState,\n\t\tZip,\n\t\tBank,\n\t\tBankState,\n\t\tNAICS,\n\t\tApprovalDate,\n\t\tApprovalFY,\n\t\tTerm,\n\t\tNoEmp,\n\t\tNewExist,\n\t\tCreateJob,\n\t\tRetainedJob,\n\t\tFranchiseCode,\n\t\tUrbanRural,\n\t\tRevLineCr,\n\t\tLowDoc,\n\t\tChgOffDate,\n\t\tDisbursementDate,\n\t\tDisbursementGross,\n\t\tBalanceGross,\n\t\tMIS_Status,\n\t\tChgOffPrinGr,\n\t\tGrAppv,\n\t\tSBA_Appv,\n\t\tIndustryCode,\n\t\tRisk,\n\t\tIndustry\n\t),\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true) ~> RemoveUnnecessaryColumns\nRemoveUnnecessaryColumns sink(allowSchemaDrift: true,\n\tvalidateSchema: false,\n\ttruncate: true,\n\tskipDuplicateMapInputs: true,\n\tskipDuplicateMapOutputs: true,\n\tpartitionBy('hash', 1)) ~> Curateddata"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/LoanRawdata')]",
+				"[concat(variables('workspaceId'), '/datasets/NAICS')]",
+				"[concat(variables('workspaceId'), '/datasets/LoanCuratedData')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/WorkspaceSystemIdentity')]",
+			"type": "Microsoft.Synapse/workspaces/credentials",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "ManagedIdentity",
+				"typeProperties": {}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL analysis')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "SELECT [state],count([Risk])\n FROM [default].[dbo].[loantest02]\ngroup by [state]\n",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "default",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Notebook 1')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "sparkpool01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1"
+					},
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "python"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/35e1448d-7744-4a0b-abb8-1d2aae54dc0a/resourceGroups/ks-cor-loan-deploy/providers/Microsoft.Synapse/workspaces/loandemo/bigDataPools/sparkpool01",
+						"name": "sparkpool01",
+						"type": "Spark",
+						"endpoint": "https://loandemo.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/sparkpool01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 3,
+						"cores": 4,
+						"memory": 28,
+						"extraHeader": null
+					}
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\r\n",
+							"df = spark.read.load([\r\n",
+							"    'abfss://loanfilecontainer@loandemo.dfs.core.windows.net/data_for_analysis/part-00000-2554c988-d42a-453d-aaa8-e2e3d1b3c5a0-c000.csv',\r\n",
+							"    'abfss://loanfilecontainer@loandemo.dfs.core.windows.net/data_for_analysis/part-00001-2554c988-d42a-453d-aaa8-e2e3d1b3c5a0-c000.csv',\r\n",
+							"    'abfss://loanfilecontainer@loandemo.dfs.core.windows.net/data_for_analysis/part-00002-2554c988-d42a-453d-aaa8-e2e3d1b3c5a0-c000.csv',\r\n",
+							"    'abfss://loanfilecontainer@loandemo.dfs.core.windows.net/data_for_analysis/part-00003-2554c988-d42a-453d-aaa8-e2e3d1b3c5a0-c000.csv'\r\n",
+							"    ], format='csv'\r\n",
+							"## If header exists uncomment line below\r\n",
+							", header=True\r\n",
+							")\r\n",
+							"df.write.mode(\"overwrite\").saveAsTable(\"default.YourTableName\")"
+						],
+						"attachments": null,
+						"outputs": [],
+						"execution_count": 1
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Notebook 2')]",
+			"type": "Microsoft.Synapse/workspaces/notebooks",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"nbformat": 4,
+				"nbformat_minor": 2,
+				"bigDataPool": {
+					"referenceName": "sparkpool01",
+					"type": "BigDataPoolReference"
+				},
+				"sessionProperties": {
+					"driverMemory": "28g",
+					"driverCores": 4,
+					"executorMemory": "28g",
+					"executorCores": 4,
+					"numExecutors": 2,
+					"conf": {
+						"spark.dynamicAllocation.enabled": "false",
+						"spark.dynamicAllocation.minExecutors": "2",
+						"spark.dynamicAllocation.maxExecutors": "2"
+					}
+				},
+				"metadata": {
+					"saveOutput": true,
+					"synapse_widget": {
+						"version": "0.1"
+					},
+					"kernelspec": {
+						"name": "synapse_pyspark",
+						"display_name": "Synapse PySpark"
+					},
+					"language_info": {
+						"name": "sql"
+					},
+					"a365ComputeOptions": {
+						"id": "/subscriptions/35e1448d-7744-4a0b-abb8-1d2aae54dc0a/resourceGroups/ks-cor-loan-deploy/providers/Microsoft.Synapse/workspaces/loandemo/bigDataPools/sparkpool01",
+						"name": "sparkpool01",
+						"type": "Spark",
+						"endpoint": "https://loandemo.dev.azuresynapse.net/livyApi/versions/2019-11-01-preview/sparkPools/sparkpool01",
+						"auth": {
+							"type": "AAD",
+							"authResource": "https://dev.azuresynapse.net"
+						},
+						"sparkVersion": "2.4",
+						"nodeCount": 3,
+						"cores": 4,
+						"memory": 28,
+						"extraHeader": null
+					}
+				},
+				"cells": [
+					{
+						"cell_type": "code",
+						"metadata": {
+							"microsoft": {
+								"language": "python"
+							}
+						},
+						"source": [
+							"%%pyspark\n",
+							"blob_account_name = \"sbadata\"\n",
+							"blob_container_name = \"output\"\n",
+							"from pyspark.sql import SparkSession\n",
+							"\n",
+							"sc = SparkSession.builder.getOrCreate()\n",
+							"token_library = sc._jvm.com.microsoft.azure.synapse.tokenlibrary.TokenLibrary\n",
+							"blob_sas_token = token_library.getConnectionString(\"link_to_sbadata_storage\")\n",
+							"\n",
+							"spark.conf.set(\n",
+							"    'fs.azure.sas.%s.%s.blob.core.windows.net' % (blob_container_name, blob_account_name),\n",
+							"    blob_sas_token)\n",
+							"df = spark.read.load([\n",
+							"    'wasbs://output@sbadata.blob.core.windows.net/part-00000-4b5010b6-ad3b-45af-a02a-2499e34d688a-c000.csv',\n",
+							"    'wasbs://output@sbadata.blob.core.windows.net/part-00001-4b5010b6-ad3b-45af-a02a-2499e34d688a-c000.csv',\n",
+							"    'wasbs://output@sbadata.blob.core.windows.net/part-00002-4b5010b6-ad3b-45af-a02a-2499e34d688a-c000.csv',\n",
+							"    'wasbs://output@sbadata.blob.core.windows.net/part-00003-4b5010b6-ad3b-45af-a02a-2499e34d688a-c000.csv'\n",
+							"    ], format='csv'\n",
+							"## If header exists uncomment line below\n",
+							", header=True\n",
+							")\n",
+							"df.write.mode(\"overwrite\").saveAsTable(\"default.loantest02\")"
+						],
+						"attachments": null,
+						"outputs": [],
+						"execution_count": 1
+					},
+					{
+						"cell_type": "code",
+						"metadata": {
+							"jupyter": {
+								"source_hidden": false,
+								"outputs_hidden": false
+							},
+							"nteract": {
+								"transient": {
+									"deleting": false
+								}
+							},
+							"collapsed": false
+						},
+						"source": [
+							"\r\n",
+							"SELECT count(Risk),state\r\n",
+							"fROM default.loantest02\r\n",
+							"group by state"
+						],
+						"attachments": null,
+						"outputs": [],
+						"execution_count": 10
+					}
+				]
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/sqlpool01')]",
+			"type": "Microsoft.Synapse/workspaces/sqlPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"collation": "SQL_Latin1_General_CP1_CI_AS",
+				"maxSizeBytes": 263882790666240,
+				"restorePointInTime": "0001-01-01T00:00:00",
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "eastus2"
+		}
+	]
+}
